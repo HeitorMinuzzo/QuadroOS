@@ -690,7 +690,8 @@ body,
 .column-visibility-add {
   border-radius: 8px;
 }
-[data-slot='tooltip-content'] {
+/* Plain text tooltips only; rich cards such as the group summary keep their light surface. */
+[data-slot='tooltip-content']:not(.summary-tooltip) {
   padding: 5px 9px;
   border-radius: 7px;
   background: #23273a;
