@@ -1,0 +1,193 @@
+.field-select-trigger {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 1px 2px #1c2c4a05;
+  color: var(--ui-ink);
+  font-size: 13px;
+  font-weight: 400;
+  outline: none;
+  transition:
+    border-color 140ms,
+    background-color 140ms,
+    box-shadow 140ms;
+}
+.field-select-trigger:hover:not(:disabled) {
+  border-color: var(--ui-hover-border);
+  background: #fafbff;
+}
+.field-select-trigger[data-state='open'] {
+  border-color: var(--ui-focus);
+  box-shadow: var(--ui-focus-shadow);
+}
+.field-select-trigger:focus-visible:not([data-pointer-focus]) {
+  outline: 2px solid #0073ea80;
+  outline-offset: 2px;
+}
+.field-select-trigger > svg {
+  width: 14px;
+  height: 14px;
+  color: #79879d;
+}
+.field-select-trigger:disabled {
+  background: #f5f7fb;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.field-select-trigger[data-placeholder] {
+  color: var(--ui-muted);
+}
+.field-select-trigger[data-variant='toolbar'] {
+  width: auto;
+  height: 32px;
+  padding: 0 8px;
+  border-color: transparent;
+  box-shadow: none;
+  background: transparent;
+  font-size: 12px;
+}
+.field-select-trigger[data-variant='toolbar']:hover {
+  background: var(--ui-hover);
+}
+.field-select-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  width: 100%;
+}
+.field-select-line > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: #7c87a2;
+}
+.field-select-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex: none;
+  box-shadow: inset 0 0 0 1px #00000008;
+}
+.field-select-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.field-select-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+.field-select-copy > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.field-select-copy small {
+  font-size: 11px;
+  color: #69768c;
+  font-weight: 400;
+}
+.field-select-menu {
+  padding: 5px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow:
+    0 14px 45px #1b2b4d1f,
+    0 3px 10px #1b2b4d08;
+  max-height: min(360px, var(--radix-select-content-available-height));
+}
+.field-select-menu [data-radix-select-viewport] {
+  max-height: 330px;
+}
+.field-select-menu [data-slot='select-group'] {
+  padding: 0;
+}
+.field-select-heading {
+  padding: 9px 10px 7px;
+  color: #64728a;
+  font-size: 10px;
+  letter-spacing: 0.055em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+.field-select-option {
+  --accent-foreground: #34548e;
+  min-height: 36px;
+  padding: 9px 32px 9px 10px;
+  margin: 2px 0;
+  border-radius: 7px;
+  color: #46536c;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+.field-select-option > span:last-child {
+  min-width: 0;
+  width: 100%;
+}
+.field-select-option[data-state='checked'] {
+  background: #f3f5fc;
+  color: #384c78;
+  font-weight: 500;
+}
+.field-select-option:focus {
+  background: #eaf1ff;
+  color: #34548e;
+}
+.field-select-option [data-slot='select-item-indicator'] {
+  color: #5572b6;
+}
+.toolbar-select .field-select-trigger {
+  padding-left: 0;
+}
+.filter-panel .field-select-trigger {
+  min-width: 155px;
+}
+.selection-bar .field-select-trigger,
+.subitem-selection-bar .field-select-trigger {
+  width: auto;
+  min-width: 145px;
+  height: 32px;
+}
+.standard-form label:has(.field-select-trigger) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.standard-form .field-select-trigger {
+  margin: 0;
+}
+.task-properties .field-select-trigger {
+  font-size: 12px;
+  min-height: 38px;
+}
+.destination-fields label:has(.field-select-trigger) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.board-selection .field-select-trigger {
+  margin: 8px 0 14px;
+}
+.mapping-row .field-select-trigger {
+  height: 38px;
+  font-size: 12px;
+}
+.standard-form .monday-choice-trigger {
+  border-radius: 9px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .field-select-trigger {
+    transition: none;
+  }
+}
