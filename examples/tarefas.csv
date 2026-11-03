@@ -1,0 +1,4 @@
+ID;Tarefa;Grupo;Responsável;Status;Prioridade;Prazo;Descrição;Orçamento
+exemplo-001;Preparar ambiente de homologação;Esta semana;Você;Em andamento;Alta;23/10/2026;Criar um espaço para validar as próximas entregas.;1500
+exemplo-002;Revisar o guia da equipe;Esta semana;Ana Costa;Aguardando;Média;26/10/2026;Conferir as instruções e atualizar as capturas de tela.;0
+exemplo-003;Planejar melhorias do próximo mês;Próximas entregas;Júlia Santos;Não iniciado;Baixa;02/11/2026;Reunir sugestões e definir prioridades.;800
