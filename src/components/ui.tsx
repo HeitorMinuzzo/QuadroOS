@@ -61,6 +61,9 @@ export function Modal({
   const descriptionId = useId()
   const closeRef = useRef(onClose)
   closeRef.current = onClose
+  // A press that starts inside the panel and is released over the backdrop (selecting or
+  // pasting into a field) still clicks the dialog element; only a press that began there closes.
+  const pressedBackdrop = useRef(false)
   useEffect(() => {
     const dialog = ref.current!
     setContainer(dialog)
@@ -77,8 +80,13 @@ export function Modal({
         e.preventDefault()
         closeRef.current()
       }}
+      onPointerDown={(e) => {
+        pressedBackdrop.current = e.target === e.currentTarget
+      }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) closeRef.current()
+        const fromBackdrop = pressedBackdrop.current
+        pressedBackdrop.current = false
+        if (fromBackdrop && e.target === e.currentTarget) closeRef.current()
       }}
     >
       <div className="modal-inner">
