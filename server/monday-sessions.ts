@@ -119,8 +119,11 @@ export function createMondaySessions(downloadFetcher: typeof fetch = fetch) {
             const advertised = Number(response.headers.get('content-length') || 0)
             if (advertised > fileLimit)
               throw new Error('O arquivo é maior que o limite configurado.')
-            handle = await open(destination, 'wx')
+            // Drain the socket without awaiting disk writes between chunks: a paused body that the
+            // storage host closes (it recycles keep-alive connections) crashes Node's fetch
+            // (undici assertion in Parser.finish) instead of rejecting. Files are capped by fileLimit.
             const reader = response.body.getReader()
+            const chunks: Uint8Array[] = []
             let bytes = 0
             try {
               while (true) {
@@ -129,11 +132,13 @@ export function createMondaySessions(downloadFetcher: typeof fetch = fetch) {
                 bytes += chunk.value.byteLength
                 if (bytes > fileLimit || reservedBytes - asset.size + bytes > totalLimit)
                   throw new Error('O download ultrapassou o limite configurado.')
-                await handle.write(chunk.value)
+                chunks.push(chunk.value)
               }
             } finally {
               await reader.cancel().catch(() => undefined)
             }
+            handle = await open(destination, 'wx')
+            await handle.writeFile(Buffer.concat(chunks, bytes))
             if (asset.size && asset.size !== bytes)
               throw new Error('O download terminou com tamanho diferente do informado pela origem.')
             reservedBytes += bytes - asset.size
