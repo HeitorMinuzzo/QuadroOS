@@ -18,7 +18,7 @@ Base visual compacta com tabela filtrável, estados de carregamento, exportaçã
 
 ## Estrutura
 
-- Navegação em duas faixas no desktop: atalhos escuros de 64 px e lista clara de quadros, com busca e recolhimento. No celular, abertura explícita e scrim.
+- Navegação em duas faixas no desktop. A faixa escura de 64 px troca de workspace (um botão com a inicial de cada um, vindo do caminho importado do monday; quadros sem workspace ficam em "Meu espaço"), com ajuda e preferências no rodapé. O painel claro mostra só o workspace escolhido: título com menu de workspaces, botão Novo (quadro ou importação), Início, Meu trabalho e Atrasadas com contadores, busca, Favoritos, Recentes e a árvore de pastas com contagem. Pastas começam fechadas, exceto o caminho do quadro aberto; a busca abre todas; Arquivados fica por último. Quadros criados entram no workspace aberto. No celular, abertura explícita e scrim.
 - "Visão do espaço" (`#/workspace`) reúne todos os quadros: resumo de tarefas abertas, atribuídas a você, atrasadas e progresso geral; cartões de quadros com cor, favoritos, atrasos e progresso; listas de Minhas tarefas e Atrasadas de todos os quadros, que abrem os detalhes sem sair da página. Indicadores contam só tarefas principais. Em uma coluna, as listas vêm antes dos quadros.
 - "Meu trabalho" (`#/mine`) lista as tarefas principais abertas atribuídas a você em todos os quadros, agrupadas em Atrasadas, Hoje, Próximos 7 dias, Mais adiante e Sem prazo. O status muda direto na lista; o título abre os detalhes; atalhos por quadro abrem o quadro com o filtro Minhas tarefas. "Mostrar concluídas" acrescenta as concluídas. O contador da navegação usa o mesmo recorte.
 - Barra superior com caminho atual, estado de gravação, busca e notificações de prazo.

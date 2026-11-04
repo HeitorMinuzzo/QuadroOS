@@ -7,6 +7,7 @@ import {
   House,
   CircleCheck,
   FolderClosed,
+  Archive,
   PanelLeftClose,
   PanelLeftOpen,
   Download,
@@ -17,12 +18,29 @@ import {
   Star,
   Search,
   X,
+  AlarmClock,
+  Check,
+  History,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { type Board, type Workspace } from '../../shared/domain'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { type Board, type MondayFolder, type Workspace } from '../../shared/domain'
 import { Avatar, IconButton } from './ui'
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
+import {
+  boardFolders,
+  boardWorkspace,
+  isArchivedFolder,
+  listWorkspaces,
+  workspaceInitial,
+} from '../lib/workspaces'
 
 export function BoardIcon({ icon, size = 16 }: { icon: string; size?: number }) {
   const Icon = icon === 'design' ? Paintbrush : icon === 'marketing' ? Megaphone : LayoutGrid
@@ -30,52 +48,93 @@ export function BoardIcon({ icon, size = 16 }: { icon: string; size?: number }) 
 }
 
 interface BoardFolder {
-  name: string
+  folder: MondayFolder
   boards: Board[]
   children: Map<string, BoardFolder>
 }
 
+const RECENT_KEY = 'quadroos:recent-boards'
+function readRecent(): string[] {
+  try {
+    const value = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
+    return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+// Rail swatches for workspaces, picked by position so neighbours never share a colour.
+const WORKSPACE_COLORS = ['#5a63e0', '#0f8a6a', '#c2621c', '#a53d78', '#2f6fb3', '#6b7287']
+
+function countBoards(branch: BoardFolder): number {
+  let total = branch.boards.length
+  for (const child of branch.children.values()) total += countBoards(child)
+  return total
+}
+
 function FolderBranch({
-  folder,
+  branch,
+  open,
+  onToggle,
   renderBoard,
 }: {
-  folder: BoardFolder
+  branch: BoardFolder
+  open: (id: string) => boolean
+  onToggle: (id: string) => void
   renderBoard: (board: Board) => ReactNode
 }) {
-  const [open, setOpen] = useState(true)
+  const expanded = open(branch.folder.id)
+  const archived = isArchivedFolder(branch.folder)
   return (
     <div>
       <button
         type="button"
-        className="folder-item imported-folder-item"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        title={folder.name}
+        className={`folder-item imported-folder-item ${archived ? 'archived-folder' : ''}`}
+        onClick={() => onToggle(branch.folder.id)}
+        aria-expanded={expanded}
+        title={branch.folder.name}
       >
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <FolderClosed size={16} />
-        <span className="imported-folder-name">{folder.name}</span>
+        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {archived ? <Archive size={16} /> : <FolderClosed size={16} />}
+        <span className="imported-folder-name">{branch.folder.name}</span>
+        <span className="folder-count" aria-hidden="true">
+          {countBoards(branch)}
+        </span>
       </button>
-      {open && (
+      {expanded && (
         <div className="board-nav">
-          {[...folder.children].map(([id, child]) => (
-            <FolderBranch key={id} folder={child} renderBoard={renderBoard} />
+          {sortedChildren(branch).map((child) => (
+            <FolderBranch
+              key={child.folder.id}
+              branch={child}
+              open={open}
+              onToggle={onToggle}
+              renderBoard={renderBoard}
+            />
           ))}
-          {folder.boards.map(renderBoard)}
+          {branch.boards.map(renderBoard)}
         </div>
       )}
     </div>
+  )
+}
+// Archived boards always come after the active folders.
+function sortedChildren(branch: BoardFolder) {
+  return [...branch.children.values()].sort(
+    (a, b) => Number(isArchivedFolder(a.folder)) - Number(isArchivedFolder(b.folder)),
   )
 }
 
 export function Sidebar({
   data,
   activeId,
-  lastBoardId,
   page,
+  workspaceId,
+  overdueCount,
+  onWorkspace,
   onBoard,
   onOverview,
   onMine,
+  onOverdue,
   onImport,
   onCreate,
   onHelp,
@@ -85,11 +144,14 @@ export function Sidebar({
 }: {
   data: Workspace
   activeId: string
-  lastBoardId: string
   page: 'board' | 'workspace' | 'mine'
+  workspaceId: string
+  overdueCount: number
+  onWorkspace: (id: string) => void
   onBoard: (id: string) => void
   onOverview: () => void
   onMine: () => void
+  onOverdue: () => void
   onImport: () => void
   onCreate: () => void
   onHelp: () => void
@@ -97,47 +159,76 @@ export function Sidebar({
   mobile: boolean
   onClose: () => void
 }) {
-  const [folderOpen, setFolderOpen] = useState(true)
   const [collapsed, setCollapsed] = useState(false)
   const [search, setSearch] = useState('')
+  const [recent, setRecent] = useState(readRecent)
+  const [toggled, setToggled] = useState<Record<string, boolean>>({})
   useEffect(() => {
     if (mobile) setCollapsed(false)
   }, [mobile])
+  useEffect(() => {
+    if (!activeId) return
+    setRecent((previous) => {
+      const next = [activeId, ...previous.filter((id) => id !== activeId)].slice(0, 8)
+      try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+      } catch {
+        // Recents are a convenience; the list still works for this session.
+      }
+      return next
+    })
+  }, [activeId])
+
+  const workspaces = listWorkspaces(data.boards)
+  const current = workspaces.find((item) => item.id === workspaceId) ?? workspaces[0]
+  const inWorkspace = data.boards.filter((board) => boardWorkspace(board).id === current.id)
   const query = search.trim().toLocaleLowerCase('pt-BR')
-  const boards = data.boards.filter((board) =>
-    [board.name, ...(board.settings?.mondayFolderPath ?? []).map((folder) => folder.name)].some(
-      (name) => name.toLocaleLowerCase('pt-BR').includes(query),
+  const boards = inWorkspace.filter((board) =>
+    [board.name, ...boardFolders(board).map((folder) => folder.name)].some((name) =>
+      name.toLocaleLowerCase('pt-BR').includes(query),
     ),
   )
-  const root: BoardFolder = { name: '', boards: [], children: new Map() }
+  const root: BoardFolder = { folder: current, boards: [], children: new Map() }
   for (const board of boards) {
     let branch = root
-    for (const folder of board.settings?.mondayFolderPath ?? []) {
+    for (const folder of boardFolders(board)) {
       let child = branch.children.get(folder.id)
       if (!child) {
-        child = { name: folder.name, boards: [], children: new Map() }
+        child = { folder, boards: [], children: new Map() }
         branch.children.set(folder.id, child)
       }
       branch = child
     }
     branch.boards.push(board)
   }
-  const renderBoard = (board: Board) => (
+  // Folders start closed, except the ones leading to the open board; a search opens all.
+  const activeBoard = data.boards.find((board) => board.id === activeId)
+  const activePath = new Set(
+    activeBoard ? boardFolders(activeBoard).map((folder) => folder.id) : [],
+  )
+  const isOpen = (id: string) => (query ? true : (toggled[id] ?? activePath.has(id)))
+  const toggle = (id: string) => setToggled((previous) => ({ ...previous, [id]: !isOpen(id) }))
+
+  const go = (action: () => void) => () => {
+    action()
+    onClose()
+  }
+  const renderBoard = (board: Board, className = '') => (
     <button
       key={board.id}
-      className={`nav-item board-nav-item ${activeId === board.id ? 'selected' : ''}`}
+      className={`nav-item board-nav-item ${className} ${activeId === board.id ? 'selected' : ''}`}
       aria-current={activeId === board.id ? 'page' : undefined}
-      onClick={() => {
-        onBoard(board.id)
-        onClose()
-      }}
+      onClick={go(() => onBoard(board.id))}
     >
-      <BoardIcon icon={board.icon} />
+      <span className="board-dot" style={{ background: board.color }} />
       <span className="board-nav-title">{board.name}</span>
-      <span className="board-nav-color" style={{ background: board.color }} />
     </button>
   )
-  const favorites = boards.filter((b) => b.favorite)
+  const favorites = inWorkspace.filter((board) => board.favorite)
+  const recentBoards = recent
+    .map((id) => inWorkspace.find((board) => board.id === id))
+    .filter((board): board is Board => !!board && !board.favorite && board.id !== activeId)
+    .slice(0, 4)
   const boardById = new Map(data.boards.map((board) => [board.id, board]))
   // Same scope as the Meu trabalho page: open main tasks assigned to you on every board.
   const mineCount = data.tasks.filter(
@@ -145,24 +236,9 @@ export function Sidebar({
       !t.parentId &&
       boardById.has(t.boardId) &&
       taskOwnerIds(t).includes('person-you') &&
-      !isTaskDone(
-        t,
-        data.boards.find((board) => board.id === t.boardId),
-      ),
+      !isTaskDone(t, boardById.get(t.boardId)),
   ).length
-  const railActions = [
-    { label: 'Resumo do workspace', icon: House, action: onOverview, active: page === 'workspace' },
-    {
-      label: 'Abrir quadro atual',
-      icon: LayoutGrid,
-      action: () => {
-        if (lastBoardId) onBoard(lastBoardId)
-      },
-      active: page === 'board',
-    },
-    { label: 'Abrir minhas tarefas', icon: CircleCheck, action: onMine, active: page === 'mine' },
-    { label: 'Trazer dados', icon: Download, action: onImport, active: false },
-  ]
+
   return (
     <>
       <div className={`sidebar-scrim ${mobile ? 'visible' : ''}`} onClick={onClose} />
@@ -170,30 +246,33 @@ export function Sidebar({
         className={`sidebar ${mobile ? 'mobile-open' : ''} ${collapsed ? 'is-compact' : ''}`}
         aria-label="Navegação principal"
       >
-        <nav className="app-rail" aria-label="Aplicativo">
-          <button className="rail-brand" onClick={onOverview} aria-label="QuadroOS — início">
+        <nav className="app-rail" aria-label="Workspaces">
+          <button className="rail-brand" onClick={go(onOverview)} aria-label="QuadroOS — início">
             <span />
             <span />
             <span />
             <span />
           </button>
-          <div className="rail-actions">
-            {railActions.map(({ label, icon: Icon, action, active }) => (
-              <Tooltip key={label}>
+          <div className="rail-workspaces">
+            {workspaces.map((workspace, index) => (
+              <Tooltip key={workspace.id}>
                 <TooltipTrigger asChild>
                   <button
-                    className={`rail-button ${active ? 'active' : ''}`}
-                    aria-label={label}
+                    className={`rail-workspace ${workspace.id === current.id ? 'active' : ''}`}
+                    aria-label={`Workspace ${workspace.name}`}
+                    aria-pressed={workspace.id === current.id}
+                    style={{ background: WORKSPACE_COLORS[index % WORKSPACE_COLORS.length] }}
                     onClick={() => {
-                      action()
-                      onClose()
+                      onWorkspace(workspace.id)
+                      setCollapsed(false)
                     }}
                   >
-                    <Icon size={21} />
+                    {workspaceInitial(workspace.name)}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8}>
-                  {label}
+                  {workspace.name} · {workspace.boards}{' '}
+                  {workspace.boards === 1 ? 'quadro' : 'quadros'}
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -207,21 +286,45 @@ export function Sidebar({
               </TooltipTrigger>
               <TooltipContent side="right">Ajuda e atalhos</TooltipContent>
             </Tooltip>
-            <button
-              className="rail-profile"
-              aria-label="Configurações do workspace"
-              onClick={onSettings}
-            >
-              <Avatar person={data.people.find((p) => p.id === 'person-you')} small />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="rail-profile"
+                  aria-label="Configurações do workspace"
+                  onClick={onSettings}
+                >
+                  <Avatar person={data.people.find((p) => p.id === 'person-you')} small />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Preferências</TooltipContent>
+            </Tooltip>
           </div>
         </nav>
         <div className="workspace-panel">
           <header className="workspace-panel-header">
-            <div className="brand">
-              quadro<span className="brand-os">OS</span>
-              <span className="alpha-tag">alpha</span>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="workspace-title" aria-label={`Workspace: ${current.name}`}>
+                  <span>{current.name}</span>
+                  <ChevronDown size={15} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="workspace-menu">
+                <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+                {workspaces.map((workspace) => (
+                  <DropdownMenuItem key={workspace.id} onSelect={() => onWorkspace(workspace.id)}>
+                    <span className="workspace-menu-name">{workspace.name}</span>
+                    <span className="workspace-menu-count">{workspace.boards}</span>
+                    {workspace.id === current.id && <Check />}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={onSettings}>
+                  <Settings2 />
+                  Preferências do workspace
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <IconButton
               label="Recolher lista de quadros"
               className="icon-button desktop-collapse"
@@ -238,73 +341,50 @@ export function Sidebar({
             </IconButton>
           </header>
           <div className="sidebar-scroll">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="sidebar-new">
+                  <Plus size={16} />
+                  Novo
+                  <ChevronDown size={14} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="sidebar-new-menu">
+                <DropdownMenuItem onSelect={go(onCreate)}>
+                  <LayoutGrid />
+                  Criar novo quadro
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={go(onImport)}>
+                  <Download />
+                  Importar dados
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <nav className="main-nav" aria-label="Meu workspace">
               <button
                 className={`nav-item ${page === 'workspace' ? 'active' : ''}`}
                 aria-current={page === 'workspace' ? 'page' : undefined}
-                onClick={() => {
-                  onOverview()
-                  onClose()
-                }}
+                onClick={go(onOverview)}
               >
                 <House size={17} />
-                Visão do espaço
+                Início
               </button>
               <button
                 className={`nav-item ${page === 'mine' ? 'active' : ''}`}
                 aria-current={page === 'mine' ? 'page' : undefined}
-                onClick={() => {
-                  onMine()
-                  onClose()
-                }}
+                onClick={go(onMine)}
               >
                 <CircleCheck size={17} />
                 Meu trabalho<span className="nav-count">{mineCount}</span>
               </button>
-              <button className="nav-item" onClick={onImport}>
-                <Download size={17} />
-                Importações
+              <button className="nav-item" onClick={go(onOverdue)}>
+                <AlarmClock size={17} />
+                Atrasadas
+                <span className={`nav-count ${overdueCount ? 'is-alert' : ''}`}>
+                  {overdueCount}
+                </span>
               </button>
             </nav>
-            {favorites.length > 0 && (
-              <>
-                <div className="sidebar-label favorites-label">
-                  <span>
-                    <Star size={14} />
-                    Favoritos
-                  </span>
-                </div>
-                <nav aria-label="Quadros favoritos">
-                  {favorites.map((board) => (
-                    <button
-                      key={board.id}
-                      className="nav-item favorite-item"
-                      onClick={() => {
-                        onBoard(board.id)
-                        onClose()
-                      }}
-                    >
-                      <span className="board-dot" style={{ background: board.color }} />
-                      <span className="board-nav-title">{board.name}</span>
-                    </button>
-                  ))}
-                </nav>
-              </>
-            )}
-            <div className="sidebar-section-divider" />
-            <div className="sidebar-label boards-label">
-              <span>Área de trabalho</span>
-              <IconButton label="Criar quadro" onClick={onCreate}>
-                <Plus size={16} />
-              </IconButton>
-            </div>
-            <div className="workspace-switch">
-              <span className="workspace-avatar">Q</span>
-              <div className="workspace-switch-copy">
-                <strong>Meu espaço</strong>
-                <span>{data.boards.length} quadros · pessoal</span>
-              </div>
-            </div>
             <label className="sidebar-search">
               <Search size={15} />
               <input
@@ -319,39 +399,58 @@ export function Sidebar({
                 </button>
               )}
             </label>
-            <button
-              className="folder-item"
-              onClick={() => setFolderOpen(!folderOpen)}
-              aria-expanded={folderOpen}
-            >
-              {folderOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              <FolderClosed size={16} />
-              Projetos da equipe<span>{root.boards.length}</span>
-            </button>
-            {folderOpen && (
-              <nav className="board-nav" aria-label="Quadros">
-                {root.boards.map(renderBoard)}
+            {!query && favorites.length > 0 && (
+              <section className="sidebar-section" aria-label="Quadros favoritos">
+                <div className="sidebar-label">
+                  <span>
+                    <Star size={13} />
+                    Favoritos
+                  </span>
+                </div>
+                {favorites.map((board) => renderBoard(board, 'favorite-item'))}
+              </section>
+            )}
+            {!query && recentBoards.length > 0 && (
+              <section className="sidebar-section" aria-label="Quadros recentes">
+                <div className="sidebar-label">
+                  <span>
+                    <History size={13} />
+                    Recentes
+                  </span>
+                </div>
+                {recentBoards.map((board) => renderBoard(board))}
+              </section>
+            )}
+            <div className="sidebar-label boards-label">
+              <span>Quadros</span>
+              <IconButton label="Criar quadro" onClick={go(onCreate)}>
+                <Plus size={16} />
+              </IconButton>
+            </div>
+            {root.boards.length > 0 && (
+              <nav className="root-boards" aria-label="Quadros">
+                {root.boards.map((board) => renderBoard(board))}
               </nav>
             )}
             {root.children.size > 0 && (
-              <nav aria-label="Pastas importadas do Monday" key={query ? 'search' : 'browse'}>
-                {[...root.children].map(([id, folder]) => (
-                  <FolderBranch key={id} folder={folder} renderBoard={renderBoard} />
+              <nav aria-label="Pastas importadas do Monday">
+                {sortedChildren(root).map((child) => (
+                  <FolderBranch
+                    key={child.folder.id}
+                    branch={child}
+                    open={isOpen}
+                    onToggle={toggle}
+                    renderBoard={(board) => renderBoard(board)}
+                  />
                 ))}
               </nav>
             )}
-            {search && !boards.length && <p className="sidebar-empty">Nenhum quadro encontrado.</p>}
-            <button className="add-board" onClick={onCreate}>
-              <Plus size={16} />
-              Criar novo quadro
-            </button>
+            {!boards.length && (
+              <p className="sidebar-empty">
+                {query ? 'Nenhum quadro encontrado.' : 'Nenhum quadro neste workspace ainda.'}
+              </p>
+            )}
           </div>
-          <footer className="sidebar-bottom">
-            <button className="sidebar-settings" onClick={onSettings}>
-              <Settings2 size={15} />
-              <span>Preferências do workspace</span>
-            </button>
-          </footer>
         </div>
         {collapsed && (
           <Tooltip>

@@ -429,7 +429,8 @@ test('create board, group and numeric column; Escape cancels an edit; batch acti
   page,
 }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Criar novo quadro', exact: true }).click()
+  await page.getByRole('button', { name: 'Novo', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Criar novo quadro', exact: true }).click()
   await page.getByLabel('Nome do quadro', { exact: true }).fill('Quadro de validação')
   await page.getByRole('dialog').getByRole('button', { name: 'Criar quadro', exact: true }).click()
   await expect(

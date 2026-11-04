@@ -40,6 +40,7 @@ import { CreateEntity, CreateTask } from './components/Forms'
 import { ColumnEditor } from './components/ColumnEditor'
 import { WorkspaceView } from './components/WorkspaceView'
 import { MyWorkView } from './components/MyWorkView'
+import { boardFolders, boardWorkspace, LOCAL_WORKSPACE, listWorkspaces } from './lib/workspaces'
 import { Avatar, EmptyState, IconButton, Loading, Modal } from './components/ui'
 
 type ModalName =
@@ -53,6 +54,7 @@ type ModalName =
   | 'notifications'
   | 'delete'
   | null
+const WORKSPACE_KEY = 'quadroos:workspace'
 type Page = 'board' | 'workspace' | 'mine'
 function readRoute() {
   const [, page, boardId = '', view = 'table'] = location.hash.split('/')
@@ -161,6 +163,39 @@ export function App() {
     setMobile(false)
   }
   const navigateWorkspace = () => navigatePage('workspace')
+  const [workspaceId, setWorkspaceId] = useState(() => {
+    try {
+      return localStorage.getItem(WORKSPACE_KEY) || ''
+    } catch {
+      return ''
+    }
+  })
+  const chooseWorkspace = useCallback((id: string) => {
+    setWorkspaceId(id)
+    try {
+      localStorage.setItem(WORKSPACE_KEY, id)
+    } catch {
+      // The choice still applies to this visit.
+    }
+  }, [])
+  // Opening a board shows its workspace in the navigation.
+  const openBoardWorkspace = route.page === 'board' && board ? boardWorkspace(board).id : ''
+  useEffect(() => {
+    if (openBoardWorkspace) chooseWorkspace(openBoardWorkspace)
+  }, [openBoardWorkspace, chooseWorkspace])
+  const workspaces = listWorkspaces(data.boards)
+  const currentWorkspace = workspaces.find((item) => item.id === workspaceId) ?? workspaces[0]
+  const workspaceBoardIds = new Set(
+    data.boards
+      .filter((item) => boardWorkspace(item).id === currentWorkspace.id)
+      .map((item) => item.id),
+  )
+  const workspaceData: Workspace = {
+    ...data,
+    boards: data.boards.filter((item) => workspaceBoardIds.has(item.id)),
+    groups: data.groups.filter((group) => workspaceBoardIds.has(group.boardId)),
+    tasks: data.tasks.filter((item) => workspaceBoardIds.has(item.boardId)),
+  }
   function patchTask(id: string, changes: Partial<Task>): Promise<boolean> {
     setSaving((count) => count + 1)
     const job = queue.current
@@ -402,8 +437,11 @@ export function App() {
       <Sidebar
         data={data}
         activeId={route.page === 'board' ? board?.id || '' : ''}
-        lastBoardId={board?.id || ''}
         page={route.page}
+        workspaceId={currentWorkspace.id}
+        overdueCount={overdue.length}
+        onWorkspace={chooseWorkspace}
+        onOverdue={() => setModal('notifications')}
         onBoard={(id) => navigate(id)}
         onOverview={navigateWorkspace}
         onMine={() => navigatePage('mine')}
@@ -425,11 +463,11 @@ export function App() {
               <PanelLeft size={19} />
             </IconButton>
             {route.page === 'workspace' ? (
-              <strong>Meu espaço</strong>
+              <strong>{currentWorkspace.name}</strong>
             ) : route.page === 'mine' ? (
               <>
                 <button className="breadcrumb-link" onClick={navigateWorkspace}>
-                  Meu espaço
+                  {currentWorkspace.name}
                 </button>
                 <ChevronRight size={13} />
                 <strong>Meu trabalho</strong>
@@ -437,13 +475,18 @@ export function App() {
             ) : (
               <>
                 <button className="breadcrumb-link" onClick={navigateWorkspace}>
-                  Meu espaço
+                  {board ? boardWorkspace(board).name : currentWorkspace.name}
                 </button>
-                <ChevronRight size={13} />
-                <span className="board-folder-breadcrumb">
-                  {board?.settings?.mondayFolderPath?.map((folder) => folder.name).join(' / ') ||
-                    'Projetos da equipe'}
-                </span>
+                {board && boardFolders(board).length > 0 && (
+                  <>
+                    <ChevronRight size={13} />
+                    <span className="board-folder-breadcrumb">
+                      {boardFolders(board)
+                        .map((folder) => folder.name)
+                        .join(' / ')}
+                    </span>
+                  </>
+                )}
                 <ChevronRight size={13} />
                 <strong>{board?.name || 'Boas-vindas'}</strong>
               </>
@@ -503,7 +546,8 @@ export function App() {
             />
           ) : route.page === 'workspace' ? (
             <WorkspaceView
-              data={data}
+              data={workspaceData}
+              workspaceName={currentWorkspace.name}
               onOpenBoard={(id) => navigate(id)}
               onOpenTask={openTask}
               onCreateBoard={() => setModal('board')}
@@ -566,6 +610,16 @@ export function App() {
           board={board}
           onClose={closeModal}
           onCreated={async (id) => {
+            // A board created here joins the workspace that is open in the navigation.
+            if (modal === 'board' && id && currentWorkspace.id !== LOCAL_WORKSPACE.id)
+              await api(`/boards/${id}`, {
+                method: 'PATCH',
+                body: json({
+                  settings: {
+                    mondayFolderPath: [{ id: currentWorkspace.id, name: currentWorkspace.name }],
+                  },
+                }),
+              }).catch(() => undefined)
             await refresh()
             if (id) navigate(id)
             notify(
