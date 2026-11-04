@@ -267,7 +267,8 @@ body,
   font-size: 12px;
   font-weight: 550;
 }
-.folder-item > span {
+/* Count badge only; imported folders put their name in a span too. */
+.folder-item > span:not(.imported-folder-name) {
   margin-left: auto;
   min-width: 20px;
   padding: 0 6px;
@@ -1304,4 +1305,165 @@ dialog.modal::backdrop,
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-width: 0;
   }
+}
+
+/* ---------- Sidebar: workspaces on the rail, one workspace in the panel ---------- */
+.rail-workspaces {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+.rail-workspace {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 11px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 650;
+  opacity: 0.62;
+  transition:
+    opacity 140ms,
+    border-radius 140ms,
+    box-shadow 140ms;
+}
+.rail-workspace:hover,
+.rail-workspace:focus-visible {
+  opacity: 1;
+}
+.rail-workspace.active {
+  opacity: 1;
+  border-radius: 13px;
+  box-shadow:
+    0 0 0 2px #1b1e30,
+    0 0 0 4px #ffffff40;
+}
+.rail-workspace.active::before {
+  content: '';
+  position: absolute;
+  left: -13px;
+  width: 4px;
+  height: 22px;
+  border-radius: 0 4px 4px 0;
+  background: #fff;
+}
+.rail-workspace:focus-visible {
+  outline: 2px solid #8e9bff;
+  outline-offset: 3px;
+}
+.workspace-panel-header {
+  gap: 4px;
+  height: 60px;
+  padding: 0 10px 0 12px;
+}
+.workspace-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--rf-radius-sm);
+  background: transparent;
+  color: var(--rf-ink);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  text-align: left;
+}
+.workspace-title > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-title > svg {
+  flex-shrink: 0;
+  color: var(--rf-muted);
+}
+.workspace-title:hover,
+.workspace-title[aria-expanded='true'] {
+  background: var(--rf-nav-hover);
+}
+.workspace-menu {
+  min-width: 260px;
+}
+.workspace-menu-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-menu-count {
+  color: var(--rf-muted);
+  font-size: 12px;
+}
+.workspace-menu [data-slot='dropdown-menu-item'] > svg:last-child:not(:first-child) {
+  color: var(--primary);
+}
+.sidebar-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  margin: 2px 0 12px;
+  border: 0;
+  border-radius: var(--rf-radius-sm);
+  background: var(--primary);
+  box-shadow:
+    0 1px 2px #0060b929,
+    inset 0 1px 0 #ffffff26;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sidebar-new > svg:last-child {
+  opacity: 0.8;
+}
+.sidebar-new:hover,
+.sidebar-new[aria-expanded='true'] {
+  background: var(--primary-hover);
+}
+.sidebar-new:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.sidebar-new-menu {
+  min-width: 232px;
+}
+.nav-count.is-alert {
+  background: #fdecef;
+  color: #b23855;
+}
+.sidebar-section {
+  margin-bottom: 4px;
+}
+.sidebar .board-nav-item .board-dot,
+.sidebar .favorite-item .board-dot {
+  margin: 0 2px 0 0;
+}
+.root-boards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  margin-bottom: 2px;
+}
+.folder-item.archived-folder {
+  color: var(--rf-muted);
+}
+.sidebar-empty {
+  padding: 8px 10px;
+  color: var(--rf-muted);
+  font-size: 12px;
 }

@@ -19,6 +19,7 @@ import {
 } from '../../shared/domain'
 import type { CSSProperties } from 'react'
 import { BoardIcon } from './Sidebar'
+import { workspaceInitial } from '../lib/workspaces'
 import { ChoiceBadge } from './ui'
 
 const ME = 'person-you'
@@ -41,12 +42,14 @@ function byDueDate(a: Task, b: Task) {
 
 export function WorkspaceView({
   data,
+  workspaceName,
   onOpenBoard,
   onOpenTask,
   onCreateBoard,
   onImport,
 }: {
   data: Workspace
+  workspaceName: string
   onOpenBoard: (id: string) => void
   onOpenTask: (id: string) => void
   onCreateBoard: () => void
@@ -105,9 +108,9 @@ export function WorkspaceView({
         <div className="board-heading-copy">
           <div className="board-title-row">
             <span className="workspace-heading-mark" aria-hidden="true">
-              Q
+              {workspaceInitial(workspaceName)}
             </span>
-            <h1>Meu espaço</h1>
+            <h1>{workspaceName}</h1>
           </div>
           <p>Tudo o que está acontecendo nos seus quadros, em um só lugar.</p>
         </div>
