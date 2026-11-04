@@ -839,6 +839,10 @@ body {
   font-weight: 500;
   letter-spacing: -0.4px;
 }
+/* A readable tone of the group colour, set per group; the dark theme swaps in its own tone. */
+.group-heading h2.group-heading-title {
+  color: var(--group-ink);
+}
 .group-heading-copy {
   display: flex;
   align-items: center;

@@ -11,6 +11,8 @@ import './interface.css'
 import './column-values.css'
 import './task-updates.css'
 import './refresh.css'
+import './dark.generated.css'
+import './dark.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

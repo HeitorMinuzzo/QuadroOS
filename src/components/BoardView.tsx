@@ -64,7 +64,7 @@ import {
   DEFAULT_PRIORITY_OPTIONS,
 } from '../../shared/domain'
 import { api, json } from '../api'
-import { accentInk } from '../lib/color'
+import { accentInk, accentInkOnDark } from '../lib/color'
 import { TaskSorting, type MoveTask } from './TaskSorting'
 import {
   GroupSorting,
@@ -1027,7 +1027,16 @@ function BoardViewContent({
                           )}
                         </button>
                         <div className="group-heading-copy">
-                          <h2 aria-label={group.name} style={{ color: accentInk(group.color) }}>
+                          <h2
+                            aria-label={group.name}
+                            className="group-heading-title"
+                            style={
+                              {
+                                '--group-ink': accentInk(group.color),
+                                '--group-ink-dark': accentInkOnDark(group.color),
+                              } as React.CSSProperties
+                            }
+                          >
                             <GroupName
                               id={group.id}
                               name={group.name}

@@ -17,6 +17,8 @@ import {
   Keyboard,
   Trash2,
   ArrowRight,
+  Moon,
+  Sun,
 } from 'lucide-react'
 import { api, json } from './api'
 import { useEventCallback } from './lib/use-event-callback'
@@ -40,6 +42,7 @@ import { CreateEntity, CreateTask } from './components/Forms'
 import { ColumnEditor } from './components/ColumnEditor'
 import { WorkspaceView } from './components/WorkspaceView'
 import { MyWorkView } from './components/MyWorkView'
+import { useTheme, type ThemePreference } from './lib/theme'
 import { boardFolders, boardWorkspace, LOCAL_WORKSPACE, listWorkspaces } from './lib/workspaces'
 import { Avatar, EmptyState, IconButton, Loading, Modal } from './components/ui'
 
@@ -78,6 +81,7 @@ export function App() {
   const [createGroupId, setCreateGroupId] = useState<string | undefined>()
   const [createStatus, setCreateStatus] = useState<Status | undefined>()
   const [mine, setMine] = useState(false)
+  const theme = useTheme()
   const [mobile, setMobile] = useState(false)
   const [saving, setSaving] = useState(0)
   const [deleteIds, setDeleteIds] = useState<string[]>([])
@@ -509,6 +513,12 @@ export function App() {
             >
               <Search size={18} />
             </IconButton>
+            <IconButton
+              label={theme.resolved === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
+              onClick={() => theme.choose(theme.resolved === 'dark' ? 'light' : 'dark')}
+            >
+              {theme.resolved === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </IconButton>
             <IconButton label="Abrir guia rápido" onClick={() => setModal('help')}>
               <CircleHelp size={18} />
             </IconButton>
@@ -803,11 +813,32 @@ export function App() {
                 <dt>Idioma</dt>
                 <dd>Português do Brasil</dd>
               </div>
-              <div>
-                <dt>Aparência</dt>
-                <dd>Tema claro</dd>
-              </div>
             </dl>
+            <fieldset className="theme-choice">
+              <legend>Aparência</legend>
+              <div className="view-tabs" role="radiogroup" aria-label="Tema">
+                {(
+                  [
+                    ['light', 'Claro', Sun],
+                    ['dark', 'Escuro', Moon],
+                    ['system', 'Automático', null],
+                  ] as const
+                ).map(([value, label, Icon]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={theme.preference === value}
+                    className={theme.preference === value ? 'active' : ''}
+                    onClick={() => theme.choose(value as ThemePreference)}
+                  >
+                    {Icon && <Icon size={15} />}
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p>Claro é o padrão. Automático segue o tema do seu sistema.</p>
+            </fieldset>
             <div className="notice">
               Esta primeira versão usa um perfil local. Login, convites e permissões por equipe
               estão previstos para a próxima etapa.

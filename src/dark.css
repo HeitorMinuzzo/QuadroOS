@@ -1,0 +1,132 @@
+/*
+ * Dark theme, hand-tuned layer. src/dark.generated.css converts every colour of the light
+ * stylesheets; this file sets the surface hierarchy and fixes what a mechanical conversion
+ * cannot decide. Light stays the default: nothing here applies without data-theme="dark".
+ */
+:root:where([data-theme='dark']) {
+  color-scheme: dark;
+  --dk-page: #0f1117;
+  --dk-panel: #161922;
+  --dk-raised: #1d212c;
+  --dk-overlay: #232836;
+  --dk-line: #2b303d;
+  --dk-line-strong: #3a4050;
+  --dk-ink: #e6e8ef;
+  --dk-ink-soft: #c3c8d6;
+  --dk-muted: #98a0b4;
+  /* Buttons keep the light theme's blue: white text on it passes 4.5:1. */
+  --primary: #0073ea;
+  --primary-hover: #0a66cc;
+  --primary-text: #6aa9ff;
+  --primary-soft: #18294a;
+  --primary-foreground: #ffffff;
+  --ring: #4795fa;
+  /* Alert text (overdue dates, errors) needs a lighter red on dark surfaces. */
+  --red: #ff7d8e;
+  --destructive: #ff7d8e;
+  --background: var(--dk-panel);
+  --foreground: var(--dk-ink);
+  --card: var(--dk-panel);
+  --card-foreground: var(--dk-ink);
+  --popover: var(--dk-overlay);
+  --popover-foreground: var(--dk-ink);
+  --border: var(--dk-line);
+  --input: var(--dk-line-strong);
+  --ui-surface: var(--dk-panel);
+  --ui-subtle: var(--dk-raised);
+  --ui-ink: var(--dk-ink-soft);
+  --ui-muted: var(--dk-muted);
+  --ui-border: var(--dk-line);
+  --ui-control-border: var(--dk-line-strong);
+  --ui-focus: #4795fa;
+  --ui-focus-shadow: 0 0 0 3px #2f86f640;
+  --ui-menu-shadow: 0 0 0 1px #ffffff12, 0 16px 40px -12px #000000b3;
+  --ui-dialog-shadow: 0 0 0 1px #ffffff12, 0 24px 64px -16px #000000cc;
+  --ui-backdrop: #04050999;
+  --rf-app-bg: var(--dk-page);
+  --rf-ink: var(--dk-ink);
+  --rf-ink-soft: var(--dk-ink-soft);
+  --rf-muted: var(--dk-muted);
+  --rf-line: var(--dk-line);
+  --rf-line-strong: var(--dk-line-strong);
+  --rf-hover: #232836;
+  --rf-press: #2a3040;
+  --rf-nav-hover: #1f2330;
+  --rf-accent-soft: #18294a;
+  --rf-accent-ink: #8fbcff;
+  --rf-shadow-card: 0 0 0 1px #ffffff0d;
+  --rf-shadow-pop: 0 0 0 1px #ffffff14, 0 4px 10px -2px #00000066, 0 18px 40px -12px #000000b3;
+}
+
+/* Surface hierarchy: page and navigation at the bottom, the board card one step up. */
+:where(:root[data-theme='dark']) body,
+:where(:root[data-theme='dark']) .app-shell {
+  background: var(--dk-page);
+  color: var(--dk-ink);
+}
+:where(:root[data-theme='dark']) .app-main,
+:where(:root[data-theme='dark']) .topbar,
+:where(:root[data-theme='dark']) .main-content {
+  background: var(--dk-panel);
+}
+:where(:root[data-theme='dark']) .app-rail {
+  background: #0b0d12;
+  border-right: 1px solid #ffffff0a;
+}
+:where(:root[data-theme='dark']) .rail-workspace.active {
+  box-shadow:
+    0 0 0 2px #0b0d12,
+    0 0 0 4px #ffffff40;
+}
+:where(:root[data-theme='dark']) .sidebar .nav-item.active,
+:where(:root[data-theme='dark']) .sidebar .nav-item.selected,
+:where(:root[data-theme='dark']) .sidebar .board-nav .nav-item[aria-current='page'],
+:where(:root[data-theme='dark']) .workspace-switch,
+:where(:root[data-theme='dark']) .sidebar-search {
+  background: var(--dk-raised);
+}
+:where(:root[data-theme='dark']) ::selection {
+  background: #2f86f655;
+}
+:where(:root[data-theme='dark']) * {
+  scrollbar-color: #3a4050 transparent;
+}
+
+/* Group titles use the lighter tone computed for dark surfaces. */
+:where(:root[data-theme='dark']) .group-heading h2.group-heading-title {
+  color: var(--group-ink-dark);
+}
+
+/* Tooltips are dark in both themes; on dark surfaces they need an edge. */
+:where(:root[data-theme='dark']) [data-slot='tooltip-content']:not(.summary-tooltip) {
+  background: #2a2f3d;
+  box-shadow:
+    0 0 0 1px #ffffff1a,
+    0 6px 16px -6px #000000b3;
+}
+
+/* Floating layers sit one step above the panel so they read as on top of it. */
+:where(:root[data-theme='dark']) [data-slot='dropdown-menu-content'],
+:where(:root[data-theme='dark']) [data-slot='dropdown-menu-sub-content'],
+:where(:root[data-theme='dark']) [data-slot='popover-content'],
+:where(:root[data-theme='dark']) [data-slot='select-content'],
+:where(:root[data-theme='dark']) .field-select-menu,
+:where(:root[data-theme='dark']) .monday-choice-popover,
+:where(:root[data-theme='dark']) .summary-tooltip {
+  background: var(--dk-overlay);
+  color: var(--dk-ink-soft);
+}
+:where(:root[data-theme='dark']) [data-slot='dropdown-menu-item']:focus,
+:where(:root[data-theme='dark']) [data-slot='dropdown-menu-item'][data-highlighted],
+:where(:root[data-theme='dark']) [data-slot='select-item'][data-highlighted],
+:where(:root[data-theme='dark']) .assignee-option:hover,
+:where(:root[data-theme='dark']) .column-visibility-options label:hover,
+:where(:root[data-theme='dark']) .column-type-catalog > button:hover {
+  background: #2e3445;
+  color: var(--dk-ink);
+}
+:where(:root[data-theme='dark']) dialog.modal,
+:where(:root[data-theme='dark']) .modal,
+:where(:root[data-theme='dark']) [data-slot='dialog-content'] {
+  background: var(--dk-raised);
+}
