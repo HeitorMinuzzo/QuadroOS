@@ -1338,6 +1338,19 @@ tr:hover .task-drag-handle,
   color: #3b72bb;
   background: #e9f1ff;
 }
+/* Like the empty comments bubble: faded until the row is hovered, still usable to add the first subitem. */
+.expand-subitems[data-has-subitems='false'],
+.subitem-expand-button[data-has-subitems='false'] {
+  opacity: 0.25;
+}
+.expand-subitems[data-has-subitems='false'][aria-expanded='true'],
+.subitem-expand-button[data-has-subitems='false'][aria-expanded='true'],
+tr:hover > td > * > .expand-subitems[data-has-subitems='false'],
+tr:hover > td > * > .subitem-expand-button[data-has-subitems='false'],
+.expand-subitems[data-has-subitems='false']:focus-visible,
+.subitem-expand-button[data-has-subitems='false']:focus-visible {
+  opacity: 1;
+}
 .subitem-count {
   min-width: 17px;
   padding: 0 4px;

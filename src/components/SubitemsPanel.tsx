@@ -123,6 +123,10 @@ export function SubitemsPanel({
   const children = data.tasks
     .filter((t) => t.parentId === parent.id)
     .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+  const childIds = new Set(children.map((t) => t.id))
+  const withSubitems = new Set(
+    data.tasks.filter((t) => t.parentId && childIds.has(t.parentId)).map((t) => t.parentId),
+  )
   const done = children.filter((t) => isTaskDone(t, board)).length
   const allSelected = children.length > 0 && children.every((t) => selected.includes(t.id))
   const definitions = board ? boardColumns(board, 'subitems') : []
@@ -153,7 +157,9 @@ export function SubitemsPanel({
   }, [selected.length, allSelected])
   useEffect(() => {
     if (!busy && restoreFocus.current) {
-      input.current?.focus()
+      // The field spans the whole subitem table, often wider than the group; a scrolling focus
+      // would push the group table sideways after every new subitem.
+      input.current?.focus({ preventScroll: true })
       restoreFocus.current = false
     }
   }, [busy])
@@ -492,6 +498,7 @@ export function SubitemsPanel({
                           <button
                             type="button"
                             className="subitem-expand-button"
+                            data-has-subitems={withSubitems.has(child.id)}
                             aria-label={`Expandir subitens de ${child.title}`}
                             aria-expanded={expanded.includes(child.id)}
                             onClick={() =>

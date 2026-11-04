@@ -79,6 +79,7 @@ export const BoardTaskRow = memo(function BoardTaskRow({
                   variant="ghost"
                   size="icon-xs"
                   className="expand-subitems"
+                  data-has-subitems={childCount > 0}
                   aria-label={`${expanded ? 'Recolher' : 'Expandir'} subitens de ${task.title}`}
                   aria-expanded={expanded}
                   aria-controls={`subitems-${task.id}`}
