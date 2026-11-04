@@ -270,7 +270,7 @@ export async function enrichMondayPreview(
   if (childBoards.length) {
     const result = await mondayRequest<{ boards: RichMondayBoard[] }>(
       token,
-      `query ($ids:[ID!]!) { boards(ids:$ids) { id name columns { ${MONDAY_COLUMN_FIELDS} } } }`,
+      `query ($ids:[ID!]!) { boards(ids:$ids,state:all) { id name columns { ${MONDAY_COLUMN_FIELDS} } } }`,
       { ids: childBoards },
       fetcher,
     )

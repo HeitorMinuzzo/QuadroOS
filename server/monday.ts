@@ -71,14 +71,18 @@ interface MondayBoard {
   id: string
   name: string
   description: string | null
+  type?: string
+  state?: string
+  archived?: boolean
 }
 export async function listMondayBoards(token: string, fetcher?: MondayFetch) {
   const boards: MondayBoard[] = []
   const seen = new Set<string>()
   for (let page = 1; ; page++) {
+    // Archived boards are part of the migration; deleted ones are not.
     const data = await mondayRequest<{ boards: MondayBoard[] }>(
       token,
-      'query ($page:Int!) { boards(limit:50,page:$page,state:active) { id name description type } }',
+      'query ($page:Int!) { boards(limit:50,page:$page,state:all) { id name description type state } }',
       { page },
       fetcher,
     )
@@ -86,7 +90,15 @@ export async function listMondayBoards(token: string, fetcher?: MondayFetch) {
     for (const board of data.boards) {
       if (seen.has(board.id)) continue
       seen.add(board.id)
-      if (!('type' in board) || board.type === 'board') boards.push(board)
+      if (board.type !== undefined && board.type !== 'board') continue
+      if (board.state !== undefined && board.state !== 'active' && board.state !== 'archived')
+        continue
+      boards.push({
+        id: board.id,
+        name: board.name,
+        description: board.description,
+        ...(board.state === 'archived' ? { archived: true } : {}),
+      })
     }
     if (data.boards.length < 50) break
     if (seen.size === previousCount)
@@ -296,13 +308,15 @@ export async function prepareMondayPreview(token: string, boardId: string, fetch
     boards: {
       name: string
       board_folder_id?: string | null
+      state?: string | null
+      workspace?: { id: string; name: string } | null
       columns: MondayColumn[]
       groups?: { id?: string; title: string; color: string }[]
       items_page: MondayPage
     }[]
   }>(
     token,
-    `query ($ids:[ID!]!) { boards(ids:$ids) { id name description board_kind board_folder_id hierarchy_type views { id name type settings settings_str filter sort } groups { id title color position } columns { ${MONDAY_COLUMN_FIELDS} } items_page(limit:100) { cursor items { ${fields} } } } }`,
+    `query ($ids:[ID!]!) { boards(ids:$ids,state:all) { id name description board_kind board_folder_id state workspace { id name } hierarchy_type views { id name type settings settings_str filter sort } groups { id title color position } columns { ${MONDAY_COLUMN_FIELDS} } items_page(limit:100) { cursor items { ${fields} } } } }`,
     { ids: [boardId] },
     fetcher,
   )
@@ -428,18 +442,29 @@ export async function prepareMondayPreview(token: string, boardId: string, fetch
     basic,
     fetcher,
   )
+  // Workspace › Arquivados › folders, so boards from different workspaces and archived boards
+  // stay apart in the navigation instead of mixing with the active ones.
+  const workspace = board.workspace?.id && board.workspace.name?.trim() ? board.workspace : null
+  const scope = workspace?.id ?? 'none'
+  const prefix: MondayFolder[] = [
+    ...(workspace ? [{ id: `workspace:${workspace.id}`, name: workspace.name }] : []),
+    ...(board.state === 'archived' ? [{ id: `archived:${scope}`, name: 'Arquivados' }] : []),
+  ]
   if (board.board_folder_id !== undefined) {
     try {
-      bundle.preview.mondayFolderPath = await mondayFolderPath(
-        token,
-        board.board_folder_id,
-        fetcher,
-      )
+      bundle.preview.mondayFolderPath = [
+        ...prefix,
+        ...(await mondayFolderPath(token, board.board_folder_id, fetcher)),
+      ]
     } catch {
       bundle.preview.warnings.push(
         'O Monday não retornou o caminho completo da pasta. Confira se a chave tem acesso às pastas do quadro.',
       )
     }
-  }
+  } else if (prefix.length) bundle.preview.mondayFolderPath = prefix
+  if (board.state === 'archived')
+    bundle.preview.warnings.push(
+      'Este quadro está arquivado no Monday. Ele fica na pasta Arquivados do seu espaço de trabalho.',
+    )
   return bundle
 }

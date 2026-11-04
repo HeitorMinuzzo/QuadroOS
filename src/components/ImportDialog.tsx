@@ -84,7 +84,7 @@ export function ImportDialog({
   )
   const [boardName, setBoardName] = useState('')
   const [token, setToken] = useState('')
-  const [boards, setBoards] = useState<{ id: string; name: string }[]>([])
+  const [boards, setBoards] = useState<{ id: string; name: string; archived?: boolean }[]>([])
   const [mondayId, setMondayId] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -578,7 +578,10 @@ export function ImportDialog({
                       value={mondayId}
                       onChange={setMondayId}
                       disabled={busy}
-                      options={boards.map((b) => ({ value: b.id, label: b.name }))}
+                      options={boards.map((b) => ({
+                        value: b.id,
+                        label: b.archived ? `${b.name} (arquivado)` : b.name,
+                      }))}
                     />
                     <button
                       className="button primary"

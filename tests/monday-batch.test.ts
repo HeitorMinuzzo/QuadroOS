@@ -22,6 +22,32 @@ test('board discovery keeps paginating beyond the previous thousand-board cutoff
   assert.equal(boards.length, 1001)
 })
 
+test('board discovery includes archived boards and skips deleted boards and other kinds', async () => {
+  let query = ''
+  const boards = await listMondayBoards('synthetic-token', async (_url, init) => {
+    query = JSON.parse(String(init?.body)).query
+    return Response.json({
+      data: {
+        boards: [
+          { id: '1', name: 'Ativo', type: 'board', state: 'active' },
+          { id: '2', name: 'Arquivado', type: 'board', state: 'archived' },
+          { id: '3', name: 'Excluído', type: 'board', state: 'deleted' },
+          { id: '4', name: 'Subitens', type: 'sub_items_board', state: 'active' },
+          { id: '5', name: 'Documento', type: 'document', state: 'active' },
+        ],
+      },
+    })
+  })
+  assert.match(query, /state:all/)
+  assert.deepEqual(
+    boards.map((board) => [board.name, board.archived ?? false]),
+    [
+      ['Ativo', false],
+      ['Arquivado', true],
+    ],
+  )
+})
+
 test('batch imports each accessible board independently, keeps folders and reuses destinations on retry', async () => {
   const db = await createDatabase({ path: 'memory://' })
   let releaseListing!: () => void

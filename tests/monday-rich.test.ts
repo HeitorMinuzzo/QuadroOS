@@ -540,3 +540,37 @@ test('asset staging blocks foreign/private redirects, never forwards a token and
     await sessions.close()
   }
 })
+
+test('monday folder path starts with the workspace and keeps archived boards in their own folder', async () => {
+  const withBoard =
+    (extra: Record<string, unknown>): typeof richMondayFetch =>
+    async (url, init) => {
+      const response = await richMondayFetch(url, init)
+      if (!String(init?.body).includes('boards(ids:')) return response
+      const body = await response.json()
+      for (const board of body.data?.boards ?? []) Object.assign(board, extra)
+      return Response.json(body)
+    }
+  const workspace = { id: '7', name: 'Cronogramas' }
+
+  const archived = await previewMonday(
+    'synthetic-token',
+    '900',
+    withBoard({ workspace, state: 'archived' }),
+  )
+  assert.deepEqual(archived.mondayFolderPath, [
+    { id: 'workspace:7', name: 'Cronogramas' },
+    { id: 'archived:7', name: 'Arquivados' },
+    { id: '91', name: 'TI' },
+    { id: '92', name: 'Infraestrutura' },
+  ])
+  assert.ok(archived.warnings.some((warning) => warning.includes('arquivado')))
+
+  const unfiled = await previewMonday(
+    'synthetic-token',
+    '900',
+    withBoard({ workspace, state: 'active', board_folder_id: null }),
+  )
+  assert.deepEqual(unfiled.mondayFolderPath, [{ id: 'workspace:7', name: 'Cronogramas' }])
+  assert.ok(!unfiled.warnings.some((warning) => warning.includes('arquivado')))
+})
