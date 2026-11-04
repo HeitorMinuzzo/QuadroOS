@@ -1467,3 +1467,27 @@ dialog.modal::backdrop,
   color: var(--rf-muted);
   font-size: 12px;
 }
+
+/* ---------- Preferences: theme choice ---------- */
+.theme-choice {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 16px;
+  padding: 0;
+  border: 0;
+}
+.theme-choice legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--rf-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.theme-choice .view-tabs {
+  width: fit-content;
+}
+.theme-choice p {
+  margin: 0;
+  color: var(--rf-muted);
+  font-size: 12px;
+}

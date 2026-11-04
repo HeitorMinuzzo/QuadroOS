@@ -36,3 +36,28 @@ export function accentInk(color: string) {
   }
   return result
 }
+
+/** The group colour lightened until it reads on the dark theme's surfaces. */
+export function accentInkOnDark(color: string) {
+  const channels = color
+    .replace('#', '')
+    .match(/.{2}/g)
+    ?.map((c) => parseInt(c, 16))
+  if (!channels || channels.length !== 3) return '#b8c2d9'
+  const surface = luminance('#171920')
+  const readable = (hex: string) => (luminance(hex) + 0.05) / (surface + 0.05) >= 4.6
+  let result = color
+  for (let step = 0; step <= 10; step++) {
+    result =
+      '#' +
+      channels
+        .map((c) =>
+          Math.round(c + (255 - c) * step * 0.08)
+            .toString(16)
+            .padStart(2, '0'),
+        )
+        .join('')
+    if (readable(result)) return result
+  }
+  return result
+}
