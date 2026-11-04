@@ -149,7 +149,8 @@ export function EditableText({
   useEffect(() => setDraft(value), [value])
   useEffect(() => {
     if (editing) {
-      input.current?.focus()
+      // The title is already on screen; letting focus scroll would shift wide board tables sideways.
+      input.current?.focus({ preventScroll: true })
       input.current?.select()
     }
   }, [editing])
