@@ -17,6 +17,7 @@ import {
   DEFAULT_PRIORITY_OPTIONS,
 } from '../../shared/domain'
 import { OverlayContainer } from '../lib/overlay-container'
+import { pop } from '../lib/motion'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectSeparator } from './ui/select'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
@@ -264,6 +265,15 @@ export function PillSelect({
       ? STATUS_META[value as Status]?.color || '#798099'
       : PRIORITY_META[value]?.color || '#798099'
 
+  // A changed label pops once in its new colour (the first render is not a change).
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const shownValue = useRef(value)
+  useEffect(() => {
+    if (shownValue.current === value) return
+    shownValue.current = value
+    pop(triggerRef.current, bgColor)
+  }, [value, bgColor])
+
   const displayText =
     !value && placeholder
       ? placeholder
@@ -291,6 +301,7 @@ export function PillSelect({
       disabled={disabled}
     >
       <SelectTrigger
+        ref={triggerRef}
         aria-label={label}
         hideIcon={true}
         data-pointer-focus={focusFromPointer || undefined}

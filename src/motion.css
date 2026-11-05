@@ -1,0 +1,141 @@
+/*
+ * Motion: entrances and feedback after actions. Screen changes and label pops run from
+ * src/lib/motion.ts; everything here is CSS. Nothing moves when the system asks for reduced
+ * motion, since every rule sits inside the no-preference query.
+ */
+:root {
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --row-flash: #dbe9ff;
+}
+:root:where([data-theme='dark']) {
+  --row-flash: #1d3a66;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Dialogs grow in; the task panel slides from the right. */
+  dialog.modal[open] {
+    animation: qos-dialog-in 200ms var(--motion-ease);
+  }
+  dialog.modal[open]::backdrop {
+    animation: qos-fade-in 200ms ease-out;
+  }
+  dialog.modal.drawer-modal[open] {
+    animation: qos-drawer-in 260ms var(--motion-ease);
+  }
+
+  /* Confirmations rise from the bottom edge. */
+  .toast {
+    animation: qos-toast-in 280ms var(--motion-ease);
+  }
+
+  /* Buttons give a little under the pointer. */
+  .button,
+  [data-slot='button'],
+  .sidebar-new,
+  .view-tabs > button,
+  .rail-workspace {
+    transition-property: background-color, border-color, color, box-shadow, opacity, transform;
+  }
+  .button:active:not(:disabled),
+  [data-slot='button']:active:not(:disabled),
+  .sidebar-new:active,
+  .view-tabs > button:active,
+  .rail-workspace:active {
+    transform: scale(0.97);
+  }
+
+  /* A task, subitem or update that was just created lights up once. */
+  tr.row-new > td {
+    animation: qos-row-flash 1600ms ease-out;
+  }
+  .update-card.update-new {
+    animation:
+      qos-rise-in 320ms var(--motion-ease),
+      qos-card-flash 1600ms ease-out;
+  }
+
+  /* Sidebar folders: the arrow turns and the boards fade in below it. */
+  .folder-chevron {
+    transition: transform 180ms var(--motion-ease);
+  }
+  .folder-item[aria-expanded='true'] > .folder-chevron {
+    transform: rotate(90deg);
+  }
+  .folder-item[aria-expanded='true'] + .board-nav {
+    animation: qos-fade-down 180ms var(--motion-ease);
+  }
+
+  /* Theme switch: the new theme spreads in a circle from the button that was pressed. */
+  html.theme-switching::view-transition-old(root) {
+    animation: none;
+    z-index: 0;
+  }
+  html.theme-switching::view-transition-new(root) {
+    z-index: 1;
+    animation: qos-theme-reveal 520ms var(--motion-ease);
+  }
+  /* Rows keep their own transition names for group moves; during a theme switch they must be
+     part of the page snapshot instead of animating on their own. */
+  html.theme-switching [data-task-id] {
+    view-transition-name: none !important;
+  }
+}
+
+/* Without the animation the arrow still points the right way. */
+.folder-item[aria-expanded='true'] > .folder-chevron {
+  transform: rotate(90deg);
+}
+
+@keyframes qos-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes qos-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes qos-drawer-in {
+  from {
+    opacity: 0.6;
+    transform: translateX(40px);
+  }
+}
+@keyframes qos-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes qos-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes qos-fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes qos-row-flash {
+  from {
+    background-color: var(--row-flash);
+  }
+}
+@keyframes qos-card-flash {
+  from {
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+}
+@keyframes qos-theme-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-x) var(--theme-y));
+  }
+  to {
+    clip-path: circle(150vmax at var(--theme-x) var(--theme-y));
+  }
+}

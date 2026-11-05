@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from 'react'
+import { memo, useState, type ReactNode } from 'react'
 import { ChevronRight, MessageSquare, ArrowUpRight } from 'lucide-react'
 import type { Task, Board, Workspace, TaskPanelTab, LabelOption } from '../../shared/domain'
 import { isTaskDone } from '../../shared/domain'
@@ -7,6 +7,7 @@ import { Button } from './ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip'
 import { EditableText, IconButton } from './ui'
 import { SubitemsPanel } from './SubitemsPanel'
+import { justCreated } from '../lib/motion'
 interface Props {
   task: Task
   board: Board
@@ -16,6 +17,8 @@ interface Props {
   revealIds?: string[]
   childCount: number
   updateCount: number
+  /** Changes when the task's files change, so the memoised row re-renders its file cells. */
+  attachmentKey?: string
   subitemsColSpan: number
   orderedColumns: { key: string; label: string }[]
   statusOptions: LabelOption[]
@@ -53,12 +56,14 @@ export const BoardTaskRow = memo(function BoardTaskRow({
   onOpenTask,
   onDelete,
 }: Props) {
+  // A task created a moment ago (quick add, new item) lights up once when its row appears.
+  const [fresh] = useState(() => justCreated(task.createdAt))
   return (
     <SortableTaskRows task={task}>
       <tr
         data-task-id={task.id}
         style={{ viewTransitionName: `task-${task.id}` }}
-        className={`${selected ? 'selected-row' : ''} ${expanded ? 'expanded-row' : ''} ${isTaskDone(task, board) ? 'completed-row' : ''}`}
+        className={`${selected ? 'selected-row' : ''} ${expanded ? 'expanded-row' : ''} ${isTaskDone(task, board) ? 'completed-row' : ''} ${fresh ? 'row-new' : ''}`}
       >
         <td className="check-cell">
           <label className="checkbox-target">

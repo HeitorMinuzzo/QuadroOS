@@ -43,6 +43,7 @@ import { ColumnEditor } from './components/ColumnEditor'
 import { WorkspaceView } from './components/WorkspaceView'
 import { MyWorkView } from './components/MyWorkView'
 import { useTheme, type ThemePreference } from './lib/theme'
+import { enter } from './lib/motion'
 import { boardFolders, boardWorkspace, LOCAL_WORKSPACE, listWorkspaces } from './lib/workspaces'
 import { Avatar, EmptyState, IconButton, Loading, Modal } from './components/ui'
 
@@ -82,6 +83,21 @@ export function App() {
   const [createStatus, setCreateStatus] = useState<Status | undefined>()
   const [mine, setMine] = useState(false)
   const theme = useTheme()
+  // Screens fade in on navigation: the whole content for a new board or page, only the area
+  // below the tabs when switching between a board's views.
+  const mainRef = useRef<HTMLElement>(null)
+  const shownRoute = useRef(route)
+  useEffect(() => {
+    const previous = shownRoute.current
+    shownRoute.current = route
+    const main = mainRef.current
+    if (!main || previous === route) return
+    if (previous.page !== route.page || previous.boardId !== route.boardId) enter(main)
+    else if (previous.tab !== route.tab)
+      main
+        .querySelectorAll(':scope > :not(.board-heading):not(.board-tabs-row)')
+        .forEach((element) => enter(element, 4))
+  }, [route])
   const [mobile, setMobile] = useState(false)
   const [saving, setSaving] = useState(0)
   const [deleteIds, setDeleteIds] = useState<string[]>([])
@@ -515,7 +531,13 @@ export function App() {
             </IconButton>
             <IconButton
               label={theme.resolved === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-              onClick={() => theme.choose(theme.resolved === 'dark' ? 'light' : 'dark')}
+              onClick={(event) => {
+                const box = event.currentTarget.getBoundingClientRect()
+                theme.choose(theme.resolved === 'dark' ? 'light' : 'dark', {
+                  x: box.left + box.width / 2,
+                  y: box.top + box.height / 2,
+                })
+              }}
             >
               {theme.resolved === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </IconButton>
@@ -533,7 +555,7 @@ export function App() {
             <Avatar person={data.people.find((p) => p.id === 'person-you')} small />
           </div>
         </header>
-        <main id="main-content" className="main-content" tabIndex={-1}>
+        <main ref={mainRef} id="main-content" className="main-content" tabIndex={-1}>
           {loading ? (
             <Loading />
           ) : loadError ? (
@@ -830,7 +852,13 @@ export function App() {
                     role="radio"
                     aria-checked={theme.preference === value}
                     className={theme.preference === value ? 'active' : ''}
-                    onClick={() => theme.choose(value as ThemePreference)}
+                    onClick={(event) => {
+                      const box = event.currentTarget.getBoundingClientRect()
+                      theme.choose(value as ThemePreference, {
+                        x: box.left + box.width / 2,
+                        y: box.top + box.height / 2,
+                      })
+                    }}
                   >
                     {Icon && <Icon size={15} />}
                     {label}

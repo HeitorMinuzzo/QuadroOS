@@ -2,6 +2,15 @@ import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
 async function contrastViolations(page: Page) {
+  // Measure what settles on screen, not a frame of a screen fading in.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  )
   // Label pills keep white text on the board's own colours in both themes, by request; the
   // light theme's accessibility checks make the same exception.
   const result = await new AxeBuilder({ page })
