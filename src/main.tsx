@@ -13,6 +13,7 @@ import './task-updates.css'
 import './refresh.css'
 import './dark.generated.css'
 import './dark.css'
+import './motion.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -13,6 +13,7 @@ import type { Comment, FileAttachment, Task, Workspace } from '../../shared/doma
 import { initials } from '../../shared/domain'
 import { api, json } from '../api'
 import { Avatar } from './ui'
+import { justCreated } from '../lib/motion'
 import { Button } from './ui/button'
 import { ImportedCommentBody } from './ImportedCommentBody'
 
@@ -247,7 +248,7 @@ export function TaskUpdates({
               false
           return (
             <article
-              className="update-card"
+              className={`update-card ${justCreated(comment.createdAt) ? 'update-new' : ''}`}
               key={comment.id}
               aria-label={`Atualização de ${author?.name || 'Pessoa removida'}`}
             >

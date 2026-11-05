@@ -93,7 +93,7 @@ function FolderBranch({
         aria-expanded={expanded}
         title={branch.folder.name}
       >
-        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <ChevronRight size={14} className="folder-chevron" />
         {archived ? <Archive size={16} /> : <FolderClosed size={16} />}
         <span className="imported-folder-name">{branch.folder.name}</span>
         <span className="folder-count" aria-hidden="true">

@@ -28,6 +28,7 @@ import {
 } from '../../shared/domain'
 import { api, json } from '../api'
 import { EditableText, PillSelect } from './ui'
+import { justCreated } from '../lib/motion'
 import { FieldSelect } from './FieldSelect'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -473,7 +474,7 @@ export function SubitemsPanel({
                     <tr
                       data-task-id={child.id}
                       data-selected={selected.includes(child.id)}
-                      className={isTaskDone(child, board) ? 'subitem-done' : ''}
+                      className={`${isTaskDone(child, board) ? 'subitem-done' : ''} ${justCreated(child.createdAt) ? 'row-new' : ''}`}
                     >
                       <td className="subitem-check-cell">
                         <label className="checkbox-target">

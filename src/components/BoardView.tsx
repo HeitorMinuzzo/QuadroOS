@@ -1,4 +1,13 @@
-import { memo, useCallback, useDeferredValue, useMemo, useState, useEffect, useRef } from 'react'
+import {
+  memo,
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+} from 'react'
 import {
   Plus,
   Search,
@@ -102,6 +111,7 @@ function displayDate(value: string | null) {
         .replace('.', '')
     : 'Sem prazo'
 }
+const INITIAL_ROWS = 15
 function BoardViewContent({
   data,
   board,
@@ -141,6 +151,15 @@ function BoardViewContent({
   onMoveGroup: MoveGroup
   onResizeColumns: (boardId: string, widths: Record<string, number>) => Promise<boolean>
 }) {
+  // Opening a board (or its table) paints the first rows of each group at once and mounts the
+  // rest in a transition, so large boards respond immediately instead of after every row.
+  const viewKey = `${board.id}:${tab}`
+  const [rowWindow, setRowWindow] = useState({ key: viewKey, limit: INITIAL_ROWS })
+  const rowLimit = rowWindow.key === viewKey ? rowWindow.limit : INITIAL_ROWS
+  useEffect(() => {
+    if (rowLimit === Infinity) return
+    startTransition(() => setRowWindow({ key: viewKey, limit: Infinity }))
+  }, [viewKey, rowLimit])
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search)
   const [statusFilter, setStatusFilter] = useState('all')
@@ -365,6 +384,22 @@ function BoardViewContent({
     () => ({ tasks: data.tasks, boards: data.boards }),
     [data.tasks, data.boards],
   )
+  // Cells read the full task and attachment lists through refs, so editing one task re-renders
+  // only its row. Rows still update on their own attachments (attachmentKeys); boards with
+  // columns that show other tasks (connections, mirrors) keep re-rendering every row.
+  const latest = useRef({ workspace: cellWorkspace, attachments: data.attachments })
+  latest.current = { workspace: cellWorkspace, attachments: data.attachments }
+  const showsOtherTasks = useMemo(
+    () => board.columns.some((column) => column.type === 'external'),
+    [board.columns],
+  )
+  const crossTaskDeps = showsOtherTasks ? cellWorkspace : null
+  const attachmentKeys = useMemo(() => {
+    const keys = new Map<string, string>()
+    for (const file of data.attachments ?? [])
+      keys.set(file.taskId, `${keys.get(file.taskId) ?? ''}${file.id};`)
+    return keys
+  }, [data.attachments])
   const allColumns = useMemo(
     () => definitions.map((c) => ({ key: c.id, label: c.name })),
     [definitions],
@@ -480,10 +515,10 @@ function BoardViewContent({
       const column = board.columns.find((c) => c.id === key)
       return column ? (
         <TaskCustomCell
-          workspace={cellWorkspace}
+          workspace={latest.current.workspace}
           onOpenTask={onOpenTask}
           board={board}
-          attachments={data.attachments}
+          attachments={latest.current.attachments}
           onRefresh={onRefresh}
           task={task}
           column={column}
@@ -493,11 +528,11 @@ function BoardViewContent({
         />
       ) : null
     },
+    // crossTaskDeps is read through `latest` but listed so cross-board columns stay current.
     [
       board,
       data.people,
-      data.attachments,
-      cellWorkspace,
+      crossTaskDeps,
       statusOptions,
       priorityOptions,
       onPatch,
@@ -1246,7 +1281,7 @@ function BoardViewContent({
                                     </th>
                                   </tr>
                                 </thead>
-                                {orderedTasks.map((task) => (
+                                {orderedTasks.slice(0, rowLimit).map((task) => (
                                   <BoardTaskRow
                                     key={task.id}
                                     task={task}
@@ -1257,6 +1292,7 @@ function BoardViewContent({
                                     revealIds={expanded.includes(task.id) ? expanded : undefined}
                                     childCount={subitemCounts.get(task.id) || 0}
                                     updateCount={updateCounts.get(task.id) || 0}
+                                    attachmentKey={attachmentKeys.get(task.id)}
                                     subitemsColSpan={
                                       compactTable
                                         ? 3 + Number(visibleColumn('status'))
