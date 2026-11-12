@@ -128,6 +128,19 @@ export async function migrate(db: Database) {
       created_at TEXT NOT NULL, coverage JSONB NOT NULL, snapshot JSONB NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS monday_batch_checkpoint (
       id INTEGER PRIMARY KEY CHECK (id = 1), snapshot JSONB NOT NULL)`,
+    // Sign-in accounts, each tied to one person. Passwords exist only in local mode; an
+    // identity provider (Keycloak) fills external_id instead.
+    `CREATE TABLE IF NOT EXISTS accounts (
+      id TEXT PRIMARY KEY, person_id TEXT NOT NULL UNIQUE REFERENCES people(id) ON DELETE CASCADE,
+      email TEXT NOT NULL UNIQUE, role TEXT NOT NULL CHECK (role IN ('admin','member','viewer')),
+      active BOOLEAN NOT NULL DEFAULT true, password_hash TEXT,
+      must_change_password BOOLEAN NOT NULL DEFAULT false, external_id TEXT UNIQUE,
+      created_at TEXT NOT NULL, last_login_at TEXT)`,
+    // Only a hash of each session token is stored, so a database copy cannot sign anyone in.
+    `CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL, expires_at TEXT NOT NULL)`,
+    `CREATE INDEX IF NOT EXISTS sessions_account_idx ON sessions(account_id)`,
   ]
   await db.transaction(async (tx) => {
     for (const sql of statements) await tx.query(sql)

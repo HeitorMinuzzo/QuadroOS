@@ -36,6 +36,7 @@ import { createMondaySessions } from './monday-sessions.ts'
 import { createMondayBatch } from './monday-batch.ts'
 import { jsonObject } from '../shared/rich-values.ts'
 import { migrateBoardLabels } from './board-labels.ts'
+import { authMode, registerAuth, type AuthMode } from './auth.ts'
 
 const text = z.string().trim().min(1).max(300)
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/)
@@ -78,6 +79,7 @@ export async function buildApp(
     logger?: boolean
     mondayFetch?: MondayFetch
     mondayDownload?: typeof fetch
+    auth?: AuthMode
   } = {},
 ) {
   await migrate(db)
@@ -148,6 +150,7 @@ export async function buildApp(
     app.log.error({ name: error.name, code: error.code }, 'Falha interna')
     return reply.status(500).send({ message: 'Não foi possível concluir. Tente novamente.' })
   })
+  registerAuth(app, db, options.auth ?? authMode())
   app.get('/api/health', async () => ({ ok: true, version: '0.1.0', database: db.kind }))
   app.get('/api/workspace', async () => workspace(db))
   const mondaySessions = createMondaySessions(options.mondayDownload)
@@ -391,11 +394,19 @@ export async function buildApp(
       throw new DomainError('O comentário respondido não pertence a esta tarefa.')
     const result = await db.query(
       'INSERT INTO comments (id,task_id,author_id,body,created_at,parent_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [id(), request.params.id, 'person-you', body, new Date().toISOString(), parentId || null],
+      [
+        id(),
+        request.params.id,
+        request.viewer.personId,
+        body,
+        new Date().toISOString(),
+        parentId || null,
+      ],
     )
     return reply.status(201).send(camelRow(result.rows[0]))
   })
   app.put<{ Params: { id: string } }>('/api/comments/:id/like', async (request) => {
+    const me = request.viewer.personId
     const { liked } = z.object({ liked: z.boolean() }).strict().parse(request.body)
     return db.transaction(async (tx) => {
       const row = (
@@ -408,8 +419,8 @@ export async function buildApp(
             ? metadata.localLikes.filter((id): id is string => typeof id === 'string')
             : [],
         )
-      if (liked) localLikes.add('person-you')
-      else localLikes.delete('person-you')
+      if (liked) localLikes.add(me)
+      else localLikes.delete(me)
       const saved = await tx.query(
         'UPDATE comments SET metadata=$1::jsonb WHERE id=$2 RETURNING *',
         [JSON.stringify({ ...metadata, localLikes: [...localLikes] }), request.params.id],

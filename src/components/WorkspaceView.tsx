@@ -21,8 +21,7 @@ import type { CSSProperties } from 'react'
 import { BoardIcon } from './Sidebar'
 import { workspaceInitial } from '../lib/workspaces'
 import { ChoiceBadge } from './ui'
-
-const ME = 'person-you'
+import { useMe } from '../lib/session'
 
 function displayDate(value: string | null) {
   return value
@@ -55,13 +54,14 @@ export function WorkspaceView({
   onCreateBoard: () => void
   onImport: () => void
 }) {
+  const me = useMe()
   const boardById = new Map(data.boards.map((board) => [board.id, board]))
   // Indicators count main tasks only, as the board overview does.
   const tasks = data.tasks.filter((task) => !task.parentId && boardById.has(task.boardId))
   const done = (task: Task) => isTaskDone(task, boardById.get(task.boardId))
   const open = tasks.filter((task) => !done(task))
   const overdue = open.filter((task) => isOverdue(task, boardById.get(task.boardId)))
-  const mine = open.filter((task) => taskOwnerIds(task).includes(ME)).sort(byDueDate)
+  const mine = open.filter((task) => taskOwnerIds(task).includes(me)).sort(byDueDate)
   const completed = tasks.length - open.length
   const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0
   const boards = [...data.boards].sort(

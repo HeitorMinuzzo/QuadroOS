@@ -42,10 +42,12 @@ import { CreateEntity, CreateTask } from './components/Forms'
 import { ColumnEditor } from './components/ColumnEditor'
 import { WorkspaceView } from './components/WorkspaceView'
 import { MyWorkView } from './components/MyWorkView'
+import { AccountMenu, PasswordDialog, UsersDialog } from './components/Accounts'
 import { useTheme, type ThemePreference } from './lib/theme'
 import { enter } from './lib/motion'
 import { boardFolders, boardWorkspace, LOCAL_WORKSPACE, listWorkspaces } from './lib/workspaces'
-import { Avatar, EmptyState, IconButton, Loading, Modal } from './components/ui'
+import { EmptyState, IconButton, Loading, Modal } from './components/ui'
+import { useMe, useSession } from './lib/session'
 
 type ModalName =
   | 'import'
@@ -57,6 +59,8 @@ type ModalName =
   | 'settings'
   | 'notifications'
   | 'delete'
+  | 'users'
+  | 'password'
   | null
 const WORKSPACE_KEY = 'quadroos:workspace'
 type Page = 'board' | 'workspace' | 'mine'
@@ -71,6 +75,8 @@ function readRoute() {
   }
 }
 export function App() {
+  const me = useMe()
+  const { session } = useSession()
   const [data, setData] = useState<Workspace>(EMPTY_WORKSPACE)
   const dataRef = useRef(data)
   const [loading, setLoading] = useState(true)
@@ -552,7 +558,11 @@ export function App() {
               <Bell size={18} />
               {overdue.length > 0 && <i />}
             </button>
-            <Avatar person={data.people.find((p) => p.id === 'person-you')} small />
+            <AccountMenu
+              person={data.people.find((p) => p.id === me)}
+              onUsers={() => setModal('users')}
+              onPassword={() => setModal('password')}
+            />
           </div>
         </header>
         <main ref={mainRef} id="main-content" className="main-content" tabIndex={-1}>
@@ -804,6 +814,8 @@ export function App() {
           </div>
         </Modal>
       )}
+      {modal === 'users' && <UsersDialog onClose={closeModal} onChanged={() => void refresh()} />}
+      {modal === 'password' && <PasswordDialog onClose={closeModal} />}
       {modal === 'settings' && (
         <Modal
           title="Configurações do workspace"
@@ -825,7 +837,11 @@ export function App() {
             <dl>
               <div>
                 <dt>Ambiente</dt>
-                <dd>Workspace local · usuário único</dd>
+                <dd>
+                  {session.mode === 'local'
+                    ? 'Login com e-mail e senha'
+                    : 'Workspace local · sem login'}
+                </dd>
               </div>
               <div>
                 <dt>Persistência</dt>

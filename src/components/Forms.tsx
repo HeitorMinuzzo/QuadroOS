@@ -6,6 +6,7 @@ import { Modal, SubmitButton, PillSelect } from './ui'
 import { AssigneePicker } from './AssigneePicker'
 import { DatePicker } from './DatePicker'
 import { FieldSelect } from './FieldSelect'
+import { useMe } from '../lib/session'
 
 export function CreateTask({
   board,
@@ -22,6 +23,7 @@ export function CreateTask({
   onClose: () => void
   onCreated: () => Promise<void>
 }) {
+  const me = useMe()
   const groups = data.groups.filter((g) => g.boardId === board.id)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -30,7 +32,7 @@ export function CreateTask({
     initialStatus ?? (board.settings?.monday ? '' : 'Não iniciado'),
   )
   const [priority, setPriority] = useState(board.settings?.monday ? '' : 'Média')
-  const [ownerIds, setOwnerIds] = useState<string[]>(['person-you'])
+  const [ownerIds, setOwnerIds] = useState<string[]>([me])
   const [dueDate, setDueDate] = useState('')
   const [dueAt, setDueAt] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)

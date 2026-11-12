@@ -11,8 +11,7 @@ import {
   type Workspace,
 } from '../../shared/domain'
 import { EmptyState, PillSelect } from './ui'
-
-const ME = 'person-you'
+import { useMe } from '../lib/session'
 
 type Bucket = 'overdue' | 'today' | 'week' | 'later' | 'undated'
 const BUCKETS: { id: Bucket; label: string }[] = [
@@ -48,11 +47,12 @@ export function MyWorkView({
   onOpenBoard: (id: string) => void
   onPatch: (id: string, changes: Partial<Task>) => Promise<boolean>
 }) {
+  const me = useMe()
   const [showDone, setShowDone] = useState(false)
   const boardById = new Map(data.boards.map((board) => [board.id, board]))
   const groupById = new Map(data.groups.map((group) => [group.id, group]))
   const mine = data.tasks.filter(
-    (task) => !task.parentId && boardById.has(task.boardId) && taskOwnerIds(task).includes(ME),
+    (task) => !task.parentId && boardById.has(task.boardId) && taskOwnerIds(task).includes(me),
   )
   const done = (task: Task) => isTaskDone(task, boardById.get(task.boardId))
   const open = mine.filter((task) => !done(task))

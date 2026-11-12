@@ -424,3 +424,23 @@ export function isOverdue(task: Task, board?: Board) {
   if (task.dueAt) return Date.parse(task.dueAt) < Date.now() && !isTaskDone(task, board)
   return !!task.dueDate && task.dueDate < localDate() && !isTaskDone(task, board)
 }
+
+export type AccountRole = 'admin' | 'member' | 'viewer'
+export interface AccountInfo {
+  id: string
+  personId: string
+  email: string
+  name: string
+  role: AccountRole
+  active: boolean
+  mustChangePassword: boolean
+  createdAt: string
+  lastLoginAt: string | null
+}
+/** GET /api/auth/session. In mode "none" there is no sign-in and personId is the local profile. */
+export interface SessionInfo {
+  mode: 'none' | 'local'
+  needsSetup: boolean
+  account: AccountInfo | null
+  personId: string | null
+}

@@ -16,6 +16,13 @@ Base visual compacta com tabela filtrável, estados de carregamento, exportaçã
 - Status padrão: Feito (verde `#00c875`), Em andamento (laranja `#fdab3d`), Parado (rosa `#e2445c`), Não iniciado (cinza `#798099`), Aguardando (azul `#00a0e9`) e Contínuo (roxo `#a25ddc`). Status, prioridades e qualquer coluna do tipo Status (inclusive renomeada ou nos subitens) aparecem como etiquetas arredondadas (raio de 8 px) com um pequeno recuo dentro da célula; o mesmo raio vale em formulários, detalhes e Kanban. Etiquetas podem ter nomes e cores próprios por quadro. O texto permanece branco por escolha visual explícita do usuário. Títulos de grupos usam um tom legível da cor do grupo; a faixa lateral mantém a cor original.
 - Ícones: Lucide, traço consistente; controles isolados com nome acessível.
 
+## Contas e acesso
+
+- `AUTH_MODE=none` (padrão) mantém o perfil local "Você", sem login. `AUTH_MODE=local` exige login com e-mail e senha; `oidc` está reservado para o Keycloak.
+- Contas (`accounts`) ligam-se a uma pessoa (`people`) pelo e-mail, preservando responsáveis importados. Papéis: administrador (gerencia usuários), membro (edita) e leitor (somente leitura, bloqueado no servidor). Senhas com scrypt e sal; sessões em cookie HttpOnly/SameSite=Lax, com só o hash do token no banco e validade de 14 dias.
+- Primeiro acesso cria o administrador. Administradores criam contas com senha temporária exibida uma única vez; quem entra com ela precisa criar uma senha pessoal. Redefinir senha e desativar encerram as sessões da conta; sempre resta pelo menos um administrador ativo.
+- O menu do avatar no topo mostra nome, e-mail e papel, com Alterar senha, Usuários (administradores) e Sair. O cliente usa `useMe()` (`src/lib/session.tsx`) para "meu trabalho", autoria, curtidas e votos.
+
 ## Tema escuro
 
 - O tema claro é o padrão. O escuro é opcional: botão de sol/lua na barra superior e "Aparência" em Preferências (Claro, Escuro ou Automático, que segue o sistema). A escolha fica no navegador (`quadroos:theme`; sem valor = claro) e é aplicada por `public/theme-init.js` antes da primeira pintura, sem piscar em branco.

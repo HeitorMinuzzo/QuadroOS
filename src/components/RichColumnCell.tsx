@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useMe } from '../lib/session'
 import {
   CalendarRange,
   Play,
@@ -131,6 +132,7 @@ function TimelineCell({ task, column, onPatch }: Props) {
   )
 }
 function TimeTrackingCell({ task, column, onPatch }: Props) {
+  const me = useMe()
   const value = timeValue(task.customValues[column.id] || ''),
     [tick, setTick] = useState(0),
     [busy, setBusy] = useState(false),
@@ -161,7 +163,7 @@ function TimeTrackingCell({ task, column, onPatch }: Props) {
             startedAt: null,
             sessions: [
               ...value.sessions,
-              { startedAt: value.startedAt, endedAt: now, authorId: 'person-you' },
+              { startedAt: value.startedAt, endedAt: now, authorId: me },
             ],
           }
         : { ...value, startedAt: now },
@@ -287,7 +289,7 @@ function TimeTrackingCell({ task, column, onPatch }: Props) {
                       manual: true,
                       duration: seconds,
                       createdAt: new Date().toISOString(),
-                      authorId: 'person-you',
+                      authorId: me,
                     },
                   ],
                 }).then(() => setManual(''))
@@ -336,6 +338,7 @@ const fields: Record<string, { key: string; label: string; type?: string }[]> = 
   color_picker: [{ key: 'color', label: 'Cor', type: 'color' }],
 }
 function ExternalColumnCell({ task, column, workspace, onPatch, onOpenTask }: Props) {
+  const me = useMe()
   const stored = jsonObject(task.customValues[column.id] || ''),
     value = jsonObject(stored.value),
     details = jsonObject(stored.details),
@@ -423,7 +426,7 @@ function ExternalColumnCell({ task, column, workspace, onPatch, onOpenTask }: Pr
         : Array.isArray(value.voters)
           ? value.voters.map(String)
           : [],
-      voted = voters.includes('person-you')
+      voted = voters.includes(me)
     return (
       <Button
         variant="ghost"
@@ -431,9 +434,7 @@ function ExternalColumnCell({ task, column, workspace, onPatch, onOpenTask }: Pr
         aria-label={label}
         aria-pressed={voted}
         onClick={() => {
-          const next = voted
-            ? voters.filter((id) => id !== 'person-you')
-            : [...voters, 'person-you']
+          const next = voted ? voters.filter((id) => id !== me) : [...voters, me]
           void onPatch(task.id, {
             customValues: {
               [column.id]: JSON.stringify({

@@ -17,6 +17,9 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     },
   })
   if (!response.ok) {
+    // An expired or missing session sends the app back to sign-in (see src/lib/session.tsx).
+    if (response.status === 401 && !path.startsWith('/auth/'))
+      window.dispatchEvent(new Event('quadroos:unauthorized'))
     const error = await response
       .json()
       .catch(() => ({ message: 'O servidor não respondeu. Tente novamente.' }))

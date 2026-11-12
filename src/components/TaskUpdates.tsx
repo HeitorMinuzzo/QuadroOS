@@ -16,6 +16,7 @@ import { Avatar } from './ui'
 import { justCreated } from '../lib/motion'
 import { Button } from './ui/button'
 import { ImportedCommentBody } from './ImportedCommentBody'
+import { useMe } from '../lib/session'
 
 function authorFor(comment: Comment, data: Workspace) {
   const local = data.people.find((person) => person.id === comment.authorId),
@@ -88,6 +89,7 @@ function UpdateComposer({
   reply?: boolean
   onSubmit: (body: string) => Promise<boolean>
 }) {
+  const me = useMe()
   const [body, setBody] = useState(''),
     [sending, setSending] = useState(false),
     [error, setError] = useState(''),
@@ -138,7 +140,7 @@ function UpdateComposer({
       </div>
       <footer>
         <div>
-          <Avatar person={data.people.find((person) => person.id === 'person-you')} small />
+          <Avatar person={data.people.find((person) => person.id === me)} small />
           <span>{reply ? 'Responder à conversa' : 'Publicar no item'}</span>
         </div>
         <Button type="submit" size="sm" disabled={sending || !body.trim()}>
@@ -164,6 +166,7 @@ export function TaskUpdates({
   onRefresh: () => Promise<void>
   onOpenTask: (id: string) => void
 }) {
+  const me = useMe()
   const comments = data.comments.filter((comment) => comment.taskId === task.id),
     byId = new Map(comments.map((comment) => [comment.id, comment]))
   const [replyTo, setReplyTo] = useState<string | null>(null),
@@ -199,7 +202,7 @@ export function TaskUpdates({
       await api(`/comments/${comment.id}/like`, {
         method: 'PUT',
         body: json({
-          liked: !(comment.metadata?.localLikes as string[] | undefined)?.includes('person-you'),
+          liked: !(comment.metadata?.localLikes as string[] | undefined)?.includes(me),
         }),
       })
       await onRefresh()
@@ -243,9 +246,7 @@ export function TaskUpdates({
               (Array.isArray(comment.metadata?.localLikes)
                 ? comment.metadata.localLikes.length
                 : 0),
-            liked =
-              (comment.metadata?.localLikes as string[] | undefined)?.includes('person-you') ||
-              false
+            liked = (comment.metadata?.localLikes as string[] | undefined)?.includes(me) || false
           return (
             <article
               className={`update-card ${justCreated(comment.createdAt) ? 'update-new' : ''}`}

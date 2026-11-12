@@ -41,6 +41,7 @@ import {
   listWorkspaces,
   workspaceInitial,
 } from '../lib/workspaces'
+import { useMe } from '../lib/session'
 
 export function BoardIcon({ icon, size = 16 }: { icon: string; size?: number }) {
   const Icon = icon === 'design' ? Paintbrush : icon === 'marketing' ? Megaphone : LayoutGrid
@@ -159,6 +160,7 @@ export function Sidebar({
   mobile: boolean
   onClose: () => void
 }) {
+  const me = useMe()
   const [collapsed, setCollapsed] = useState(false)
   const [search, setSearch] = useState('')
   const [recent, setRecent] = useState(readRecent)
@@ -235,7 +237,7 @@ export function Sidebar({
     (t) =>
       !t.parentId &&
       boardById.has(t.boardId) &&
-      taskOwnerIds(t).includes('person-you') &&
+      taskOwnerIds(t).includes(me) &&
       !isTaskDone(t, boardById.get(t.boardId)),
   ).length
 
@@ -293,7 +295,7 @@ export function Sidebar({
                   aria-label="Configurações do workspace"
                   onClick={onSettings}
                 >
-                  <Avatar person={data.people.find((p) => p.id === 'person-you')} small />
+                  <Avatar person={data.people.find((p) => p.id === me)} small />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right">Preferências</TooltipContent>

@@ -96,6 +96,7 @@ import { GroupColumnSummary } from './GroupColumnSummary'
 import { taskDescendantCounts } from '../../shared/group-summary'
 import { BoardCalendar } from './BoardCalendar'
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover'
+import { useMe } from '../lib/session'
 
 export type BoardTab = 'table' | 'kanban' | 'calendar' | 'overview' | 'automations'
 const columns = [
@@ -151,6 +152,7 @@ function BoardViewContent({
   onMoveGroup: MoveGroup
   onResizeColumns: (boardId: string, widths: Record<string, number>) => Promise<boolean>
 }) {
+  const me = useMe()
   // Opening a board (or its table) paints the first rows of each group at once and mounts the
   // rest in a transition, so large boards respond immediately instead of after every row.
   const viewKey = `${board.id}:${tab}`
@@ -298,7 +300,7 @@ function BoardViewContent({
           `${t.title} ${t.description}`
             .toLocaleLowerCase('pt-BR')
             .includes(deferredSearch.toLocaleLowerCase('pt-BR'))) &&
-        (!onlyMine || taskOwnerIds(t).includes('person-you')) &&
+        (!onlyMine || taskOwnerIds(t).includes(me)) &&
         (statusFilter === 'all' || t.status === statusFilter) &&
         (priorityFilter === 'all' || t.priority === priorityFilter) &&
         (ownerFilter === 'all' ||
@@ -318,7 +320,7 @@ function BoardViewContent({
   }, [deferredSearch, onlyMine, statusFilter, priorityFilter, ownerFilter, data.tasks, board.id])
   const tasks = useMemo(() => {
     const matches = (t: Task) =>
-      (!onlyMine || taskOwnerIds(t).includes('person-you')) &&
+      (!onlyMine || taskOwnerIds(t).includes(me)) &&
       (!deferredSearch ||
         `${t.title} ${t.description}`
           .toLocaleLowerCase('pt-BR')

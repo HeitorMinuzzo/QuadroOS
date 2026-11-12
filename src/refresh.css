@@ -1491,3 +1491,246 @@ dialog.modal::backdrop,
   color: var(--rf-muted);
   font-size: 12px;
 }
+
+/* ---------- Sign-in: first run, login and forced password change ---------- */
+.auth-screen {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px 16px;
+  background: var(--rf-app-bg);
+}
+.auth-card {
+  width: min(400px, 100%);
+  padding: 32px 28px 24px;
+  border: 1px solid var(--rf-line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--rf-shadow-pop);
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  color: var(--rf-ink);
+  font-size: 19px;
+  letter-spacing: -0.6px;
+}
+.auth-brand .rail-brand {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  grid-template-columns: repeat(2, 9px);
+  grid-template-rows: repeat(2, 9px);
+}
+.auth-card h1 {
+  margin: 0 0 6px;
+  color: var(--rf-ink);
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.4px;
+}
+.auth-subtitle {
+  margin: 0 0 20px;
+  color: var(--rf-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+.auth-field {
+  display: grid;
+  gap: 6px;
+  color: var(--rf-ink-soft);
+  font-size: 13px;
+  font-weight: 550;
+}
+.auth-field input,
+.invite-form input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--rf-line-strong);
+  border-radius: var(--rf-radius-sm);
+  background: #fff;
+  color: var(--rf-ink);
+  font: inherit;
+  font-weight: 400;
+}
+.auth-field input:focus,
+.invite-form input:focus {
+  border-color: var(--ui-focus);
+  box-shadow: var(--ui-focus-shadow);
+  outline: none;
+}
+.auth-hint {
+  margin: 0;
+  color: var(--rf-muted);
+  font-size: 12px;
+}
+.auth-card > .auth-hint {
+  margin-top: 16px;
+  text-align: center;
+}
+.auth-submit {
+  justify-content: center;
+  width: 100%;
+  height: 40px;
+  margin-top: 4px;
+}
+
+/* ---------- Account menu and user management ---------- */
+.account-trigger {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.account-trigger:hover,
+.account-trigger[aria-expanded='true'] {
+  box-shadow: 0 0 0 3px var(--rf-hover);
+}
+.account-menu {
+  min-width: 240px;
+}
+.account-menu .account-menu-identity {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.account-menu-identity strong {
+  color: var(--rf-ink);
+  font-size: 13px;
+}
+.account-menu-identity span {
+  color: var(--rf-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.account-dialog-body {
+  display: grid;
+  gap: 18px;
+  padding: 20px 24px 24px;
+}
+.users-modal {
+  width: min(760px, calc(100vw - 24px));
+}
+.temporary-password {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #c8daf7;
+  border-radius: var(--rf-radius);
+  background: var(--rf-accent-soft);
+  color: var(--rf-ink-soft);
+  font-size: 13px;
+}
+.temporary-password p {
+  margin: 0;
+}
+.temporary-password > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.temporary-password code {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--rf-ink);
+  font-size: 15px;
+  letter-spacing: 0.5px;
+}
+.invite-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--rf-line);
+  border-radius: var(--rf-radius);
+  background: var(--ui-subtle);
+}
+.invite-form h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--rf-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.invite-form label,
+.invite-role {
+  display: grid;
+  gap: 6px;
+  color: var(--rf-ink-soft);
+  font-size: 12px;
+  font-weight: 550;
+}
+.invite-form .button {
+  height: 40px;
+}
+.account-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--rf-line);
+  border-radius: var(--rf-radius);
+}
+.account-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.account-list li + li {
+  border-top: 1px solid var(--rf-line);
+}
+.account-list li.inactive .account-list-who {
+  opacity: 0.6;
+}
+.account-list-who {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.account-list-who strong {
+  color: var(--rf-ink);
+  font-size: 13px;
+}
+.account-list-who small {
+  color: var(--rf-muted);
+  font-weight: 400;
+}
+.account-list-who span {
+  overflow: hidden;
+  color: var(--rf-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-list-actions {
+  display: flex;
+  gap: 8px;
+}
+.account-list-actions .button {
+  height: 34px;
+  min-height: 34px;
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .invite-form,
+  .account-list li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

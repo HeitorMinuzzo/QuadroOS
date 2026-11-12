@@ -4813,3 +4813,90 @@
 :where(:root[data-theme='dark']) .theme-choice p {
     color: var(--rf-muted)
 }
+:where(:root[data-theme='dark']) .auth-screen {
+    background: var(--rf-app-bg)
+}
+:where(:root[data-theme='dark']) .auth-card {
+    border: 1px solid var(--rf-line);
+    border-radius: 16px;
+    background: #171920;
+    box-shadow: var(--rf-shadow-pop)
+}
+:where(:root[data-theme='dark']) .auth-brand {
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .auth-card h1 {
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .auth-subtitle {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .auth-field {
+    color: var(--rf-ink-soft)
+}
+:where(:root[data-theme='dark']) .auth-field input, :where(:root[data-theme='dark']) .invite-form input {
+    border: 1px solid var(--rf-line-strong);
+    border-radius: var(--rf-radius-sm);
+    background: #171920;
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .auth-field input:focus, :where(:root[data-theme='dark']) .invite-form input:focus {
+    border-color: var(--ui-focus);
+    box-shadow: var(--ui-focus-shadow);
+    outline: none
+}
+:where(:root[data-theme='dark']) .auth-hint {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .account-trigger {
+    border: 0;
+    border-radius: 50%;
+    background: transparent
+}
+:where(:root[data-theme='dark']) .account-trigger:hover, :where(:root[data-theme='dark']) .account-trigger[aria-expanded='true'] {
+    box-shadow: 0 0 0 3px var(--rf-hover)
+}
+:where(:root[data-theme='dark']) .account-menu-identity strong {
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .account-menu-identity span {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .temporary-password {
+    border: 1px solid #3c4758;
+    border-radius: var(--rf-radius);
+    background: var(--rf-accent-soft);
+    color: var(--rf-ink-soft)
+}
+:where(:root[data-theme='dark']) .temporary-password code {
+    border-radius: 6px;
+    background: #171920;
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .invite-form {
+    border: 1px solid var(--rf-line);
+    border-radius: var(--rf-radius);
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .invite-form h3 {
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .invite-form label, :where(:root[data-theme='dark']) .invite-role {
+    color: var(--rf-ink-soft)
+}
+:where(:root[data-theme='dark']) .account-list {
+    border: 1px solid var(--rf-line);
+    border-radius: var(--rf-radius)
+}
+:where(:root[data-theme='dark']) .account-list li + li {
+    border-top: 1px solid var(--rf-line)
+}
+:where(:root[data-theme='dark']) .account-list-who strong {
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .account-list-who small {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .account-list-who span {
+    color: var(--rf-muted)
+}
