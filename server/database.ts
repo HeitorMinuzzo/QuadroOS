@@ -141,6 +141,15 @@ export async function migrate(db: Database) {
       id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
       created_at TEXT NOT NULL, expires_at TEXT NOT NULL)`,
     `CREATE INDEX IF NOT EXISTS sessions_account_idx ON sessions(account_id)`,
+    // Board access: public boards are open to every account; private ones only to their members.
+    // Members point at people, so imported members gain access once they get an account.
+    `ALTER TABLE boards ADD COLUMN IF NOT EXISTS visibility TEXT NOT NULL DEFAULT 'public'`,
+    `CREATE TABLE IF NOT EXISTS board_members (
+      board_id TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+      person_id TEXT NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+      role TEXT NOT NULL CHECK (role IN ('owner','editor','viewer')),
+      PRIMARY KEY (board_id, person_id))`,
+    `CREATE INDEX IF NOT EXISTS board_members_person_idx ON board_members(person_id)`,
   ]
   await db.transaction(async (tx) => {
     for (const sql of statements) await tx.query(sql)

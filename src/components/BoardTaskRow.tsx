@@ -8,6 +8,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip'
 import { EditableText, IconButton } from './ui'
 import { SubitemsPanel } from './SubitemsPanel'
 import { justCreated } from '../lib/motion'
+import { useReadOnly } from '../lib/readonly'
 interface Props {
   task: Task
   board: Board
@@ -58,6 +59,7 @@ export const BoardTaskRow = memo(function BoardTaskRow({
 }: Props) {
   // A task created a moment ago (quick add, new item) lights up once when its row appears.
   const [fresh] = useState(() => justCreated(task.createdAt))
+  const readOnly = useReadOnly()
   return (
     <SortableTaskRows task={task}>
       <tr
@@ -65,7 +67,7 @@ export const BoardTaskRow = memo(function BoardTaskRow({
         style={{ viewTransitionName: `task-${task.id}` }}
         className={`${selected ? 'selected-row' : ''} ${expanded ? 'expanded-row' : ''} ${isTaskDone(task, board) ? 'completed-row' : ''} ${fresh ? 'row-new' : ''}`}
       >
-        <td className="check-cell">
+        <td className="check-cell" inert={readOnly}>
           <label className="checkbox-target">
             <input
               type="checkbox"
@@ -77,7 +79,9 @@ export const BoardTaskRow = memo(function BoardTaskRow({
         </td>
         <td className="title-cell">
           <div className="task-title">
-            <TaskDragHandle title={task.title} />
+            <span className="readonly-wrap" inert={readOnly}>
+              <TaskDragHandle title={task.title} />
+            </span>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -98,12 +102,14 @@ export const BoardTaskRow = memo(function BoardTaskRow({
               </TooltipContent>
             </Tooltip>
             <SortableTaskName>
-              <EditableText
-                activation="doubleClick"
-                value={task.title}
-                label={`Título: ${task.title}`}
-                onSave={(title) => void onPatch(task.id, { title })}
-              />
+              <span className="readonly-wrap" inert={readOnly}>
+                <EditableText
+                  activation="doubleClick"
+                  value={task.title}
+                  label={`Título: ${task.title}`}
+                  onSave={(title) => void onPatch(task.id, { title })}
+                />
+              </span>
             </SortableTaskName>
             {childCount > 0 && (
               <span className="subitem-count" aria-label={`${childCount} subitens`}>
@@ -130,6 +136,7 @@ export const BoardTaskRow = memo(function BoardTaskRow({
                 ? `${column.key}-cell`
                 : 'custom-cell'
             }
+            inert={readOnly}
           >
             {renderField(task, column.key)}
           </td>

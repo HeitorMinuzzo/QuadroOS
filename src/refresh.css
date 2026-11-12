@@ -1734,3 +1734,88 @@ dialog.modal::backdrop,
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Board access: read-only areas and the Share dialog. */
+.readonly-wrap {
+  display: contents;
+}
+.board-nav-lock {
+  flex: none;
+  color: var(--rf-muted);
+}
+.share-modal {
+  width: min(620px, calc(100vw - 24px));
+}
+.share-visibility {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.share-visibility button {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--rf-line);
+  border-radius: var(--rf-radius);
+  background: var(--ui-surface, #fff);
+  color: var(--rf-ink-soft);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+.share-visibility button:hover {
+  border-color: var(--rf-accent);
+}
+.share-visibility button.active {
+  border-color: var(--rf-accent);
+  background: var(--rf-accent-soft);
+  color: var(--rf-accent);
+}
+.share-visibility span {
+  display: grid;
+  gap: 3px;
+}
+.share-visibility strong {
+  color: var(--rf-ink);
+  font-size: 13px;
+}
+.share-visibility small {
+  color: var(--rf-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.share-members li {
+  grid-template-columns: minmax(0, 1fr) 140px auto;
+}
+.share-member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.share-members li.share-empty {
+  display: block;
+  color: var(--rf-muted);
+  font-size: 13px;
+}
+@media (max-width: 640px) {
+  .share-visibility,
+  .share-members li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.readonly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--rf-line);
+  border-radius: 999px;
+  color: var(--rf-muted);
+  font-size: 12px;
+  font-weight: 550;
+  white-space: nowrap;
+}

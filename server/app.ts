@@ -37,6 +37,7 @@ import { createMondayBatch } from './monday-batch.ts'
 import { jsonObject } from '../shared/rich-values.ts'
 import { migrateBoardLabels } from './board-labels.ts'
 import { authMode, registerAuth, type AuthMode } from './auth.ts'
+import { addOwner, registerBoardAccess, scopeWorkspace } from './access.ts'
 
 const text = z.string().trim().min(1).max(300)
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/)
@@ -152,7 +153,10 @@ export async function buildApp(
   })
   registerAuth(app, db, options.auth ?? authMode())
   app.get('/api/health', async () => ({ ok: true, version: '0.1.0', database: db.kind }))
-  app.get('/api/workspace', async () => workspace(db))
+  registerBoardAccess(app, db)
+  app.get('/api/workspace', async (request) =>
+    scopeWorkspace(db, request.viewer, await workspace(db)),
+  )
   const mondaySessions = createMondaySessions(options.mondayDownload)
   const mondayBatch = await createMondayBatch(db, mondaySessions, options.mondayFetch)
   let individualImports = 0
@@ -203,9 +207,12 @@ export async function buildApp(
     const data = z
       .object({ name: text, description: z.string().max(1000).default('') })
       .parse(request.body)
-    return reply
-      .status(201)
-      .send(await db.transaction((tx) => createBoard(tx, data.name, data.description)))
+    const board = await db.transaction(async (tx) => {
+      const created = await createBoard(tx, data.name, data.description)
+      await addOwner(tx, request.viewer, created.id)
+      return created
+    })
+    return reply.status(201).send(board)
   })
   app.patch<{ Params: { id: string } }>('/api/boards/:id', async (request, reply) => {
     const data = z
@@ -532,6 +539,15 @@ export async function buildApp(
           : {}),
       })
       success = true
+      // A board created by this import belongs to whoever imported it.
+      // (monday imports carry their own members instead.)
+      if (
+        !input.boardId &&
+        input.preview.source !== 'monday' &&
+        'boardId' in result &&
+        typeof result.boardId === 'string'
+      )
+        await addOwner(db, request.viewer, result.boardId)
       return result
     } finally {
       try {

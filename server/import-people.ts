@@ -31,9 +31,13 @@ export async function prepareImportPeople(
     for (const value of Object.values(item.values)) {
       if (value.includes('monday-person:')) for (const ref of columnList(value)) used.add(ref)
     }
-  if (create)
+  if (create) {
     for (const update of preview.updates || [])
       if (update.authorSourceId) used.add(`monday-person:${update.authorSourceId}`)
+    // Board members become people too, so their access applies once they get an account.
+    for (const id of [...(preview.access?.owners ?? []), ...(preview.access?.subscribers ?? [])])
+      used.add(`monday-person:${id}`)
+  }
   for (const source of preview.people || []) {
     const ref = `monday-person:${source.sourceId}`
     if (!used.has(ref)) continue

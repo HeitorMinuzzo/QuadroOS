@@ -310,13 +310,16 @@ export async function prepareMondayPreview(token: string, boardId: string, fetch
       board_folder_id?: string | null
       state?: string | null
       workspace?: { id: string; name: string } | null
+      board_kind?: string | null
+      owners?: { id: string; name: string; email: string | null }[] | null
+      subscribers?: { id: string; name: string; email: string | null }[] | null
       columns: MondayColumn[]
       groups?: { id?: string; title: string; color: string }[]
       items_page: MondayPage
     }[]
   }>(
     token,
-    `query ($ids:[ID!]!) { boards(ids:$ids,state:all) { id name description board_kind board_folder_id state workspace { id name } hierarchy_type views { id name type settings settings_str filter sort } groups { id title color position } columns { ${MONDAY_COLUMN_FIELDS} } items_page(limit:100) { cursor items { ${fields} } } } }`,
+    `query ($ids:[ID!]!) { boards(ids:$ids,state:all) { id name description board_kind board_folder_id state workspace { id name } owners { id name email } subscribers { id name email } hierarchy_type views { id name type settings settings_str filter sort } groups { id title color position } columns { ${MONDAY_COLUMN_FIELDS} } items_page(limit:100) { cursor items { ${fields} } } } }`,
     { ids: [boardId] },
     fetcher,
   )
@@ -442,6 +445,24 @@ export async function prepareMondayPreview(token: string, boardId: string, fetch
     basic,
     fetcher,
   )
+  // Who may see the board on monday: private and shareable boards list their members.
+  if (board.board_kind) {
+    const known = new Set((bundle.preview.people ?? []).map((person) => person.sourceId))
+    for (const person of [...(board.owners ?? []), ...(board.subscribers ?? [])])
+      if (!known.has(String(person.id))) {
+        known.add(String(person.id))
+        ;(bundle.preview.people ??= []).push({
+          sourceId: String(person.id),
+          name: person.name,
+          email: person.email || '',
+        })
+      }
+    bundle.preview.access = {
+      kind: board.board_kind,
+      owners: (board.owners ?? []).map((person) => String(person.id)),
+      subscribers: (board.subscribers ?? []).map((person) => String(person.id)),
+    }
+  }
   // Workspace › Arquivados › folders, so boards from different workspaces and archived boards
   // stay apart in the navigation instead of mixing with the active ones.
   const workspace = board.workspace?.id && board.workspace.name?.trim() ? board.workspace : null

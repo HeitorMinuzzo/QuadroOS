@@ -158,6 +158,21 @@ export interface Board {
   favorite: boolean
   columns: CustomColumn[]
   settings?: BoardSettings
+  /** Public boards are open to every account; private ones only to their members. */
+  visibility?: BoardVisibility
+  members?: BoardMember[]
+  /** What the signed-in person may do here, computed by the server. */
+  access?: BoardAccess
+}
+export type BoardVisibility = 'public' | 'private'
+export type BoardRole = 'owner' | 'editor' | 'viewer'
+export interface BoardMember {
+  personId: string
+  role: BoardRole
+}
+export interface BoardAccess {
+  canEdit: boolean
+  canManage: boolean
 }
 export interface Group {
   id: string
@@ -307,6 +322,8 @@ export interface ImportPreview {
   columns?: ImportSourceColumn[]
   groups?: { name: string; color: string; sourceId?: string }[]
   people?: { sourceId: string; name: string; email: string }[]
+  /** monday board kind with its owners and subscribers (monday user ids), for board access. */
+  access?: { kind: string; owners: string[]; subscribers: string[] }
   description?: string
   sessionId?: string
   subitemColumns?: ImportSourceColumn[]

@@ -134,6 +134,7 @@ export function EditableText({
   placeholder = '',
   multiline = false,
   activation = 'focus',
+  readOnly = false,
 }: {
   value: string
   onSave: (v: string) => void
@@ -142,6 +143,8 @@ export function EditableText({
   placeholder?: string
   multiline?: boolean
   activation?: 'focus' | 'doubleClick'
+  /** Shows the text (selectable, scrollable) without letting it be changed. */
+  readOnly?: boolean
 }) {
   const [draft, setDraft] = useState(value)
   const [editing, setEditing] = useState(false)
@@ -156,7 +159,7 @@ export function EditableText({
     }
   }, [editing])
   const begin = () => {
-    if (activation === 'doubleClick') setEditing(true)
+    if (activation === 'doubleClick' && !readOnly) setEditing(true)
   }
   const save = () => {
     if (activation === 'doubleClick') setEditing(false)
@@ -179,20 +182,21 @@ export function EditableText({
     className: `editable ${className}`,
   }
   const field = multiline ? (
-    <textarea {...common} rows={4} maxLength={20000} />
+    <textarea {...common} rows={4} maxLength={20000} readOnly={readOnly} />
   ) : (
     <input
       {...common}
       ref={input}
-      readOnly={activation === 'doubleClick' && !editing}
+      readOnly={readOnly || (activation === 'doubleClick' && !editing)}
       title={
-        activation === 'doubleClick'
+        activation === 'doubleClick' && !readOnly
           ? 'Dois cliques para editar · Enter ou F2 pelo teclado'
           : undefined
       }
       maxLength={300}
       onDoubleClick={begin}
       onKeyDown={(e) => {
+        if (readOnly) return
         if (activation === 'doubleClick' && !editing && ['Enter', 'F2'].includes(e.key)) {
           e.preventDefault()
           e.stopPropagation()

@@ -18,6 +18,7 @@ import {
   Star,
   Search,
   X,
+  Lock,
   AlarmClock,
   Check,
   History,
@@ -224,6 +225,9 @@ export function Sidebar({
     >
       <span className="board-dot" style={{ background: board.color }} />
       <span className="board-nav-title">{board.name}</span>
+      {board.visibility === 'private' && (
+        <Lock className="board-nav-lock" size={12} aria-label="Quadro privado" />
+      )}
     </button>
   )
   const favorites = inWorkspace.filter((board) => board.favorite)

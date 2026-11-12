@@ -31,6 +31,8 @@ import {
   Circle,
   Rows3,
   Users,
+  Lock,
+  Eye,
   ListFilter,
   MoreHorizontal,
   Pencil,
@@ -65,6 +67,8 @@ import {
   DropdownMenuItem,
 } from './ui/dropdown-menu'
 import { BoardTaskRow } from './BoardTaskRow'
+import { ShareDialog } from './ShareDialog'
+import { ReadOnlyContext } from '../lib/readonly'
 import { EditGroupDialog } from './EditGroupDialog'
 import { EditLabelsDialog } from './EditLabelsDialog'
 import {
@@ -155,6 +159,9 @@ function BoardViewContent({
   const me = useMe()
   // Opening a board (or its table) paints the first rows of each group at once and mounts the
   // rest in a transition, so large boards respond immediately instead of after every row.
+  // Boards the person may see but not change render read-only (the server enforces it too).
+  const readOnly = board.access?.canEdit === false
+  const [sharing, setSharing] = useState(false)
   const viewKey = `${board.id}:${tab}`
   const [rowWindow, setRowWindow] = useState({ key: viewKey, limit: INITIAL_ROWS })
   const rowLimit = rowWindow.key === viewKey ? rowWindow.limit : INITIAL_ROWS
@@ -578,7 +585,7 @@ function BoardViewContent({
     setSaving(false)
   }
   return (
-    <>
+    <ReadOnlyContext.Provider value={readOnly}>
       <section className="board-heading">
         <div className="board-heading-copy">
           <div className="board-title-row">
@@ -586,14 +593,21 @@ function BoardViewContent({
               <BoardIcon icon={board.icon} size={25} />
             </span>
             <h1>{board.name}</h1>
-            <button
-              className={`favorite-button ${board.favorite ? 'is-favorite' : ''}`}
-              aria-label={board.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-              aria-pressed={board.favorite}
-              onClick={onFavorite}
-            >
-              <Star size={19} />
-            </button>
+            {readOnly ? (
+              <span className="readonly-badge" title="Você pode ver este quadro, mas não editar.">
+                <Eye size={13} />
+                Somente leitura
+              </span>
+            ) : (
+              <button
+                className={`favorite-button ${board.favorite ? 'is-favorite' : ''}`}
+                aria-label={board.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                aria-pressed={board.favorite}
+                onClick={onFavorite}
+              >
+                <Star size={19} />
+              </button>
+            )}
           </div>
           <p>{board.description || 'Ideias organizadas. Próximos passos mais claros.'}</p>
         </div>
@@ -610,19 +624,29 @@ function BoardViewContent({
               <span className="avatar small extra">+{boardPeople.length - 4}</span>
             )}
           </div>
-          <button className="button secondary" onClick={onImport}>
-            <Upload size={16} />
-            Importar
-          </button>
-          <Button
-            variant="outline"
-            onClick={() => setTab('automations')}
-            aria-pressed={tab === 'automations'}
-          >
-            <Bot />
-            Automação
-          </Button>
-          {tab === 'overview' && (
+          {!readOnly && (
+            <>
+              <button className="button secondary" onClick={onImport}>
+                <Upload size={16} />
+                Importar
+              </button>
+              <Button
+                variant="outline"
+                onClick={() => setTab('automations')}
+                aria-pressed={tab === 'automations'}
+              >
+                <Bot />
+                Automação
+              </Button>
+            </>
+          )}
+          {board.access?.canManage && (
+            <Button variant="outline" onClick={() => setSharing(true)}>
+              {board.visibility === 'private' ? <Lock /> : <Users />}
+              Compartilhar
+            </Button>
+          )}
+          {tab === 'overview' && !readOnly && (
             <Button onClick={() => onNewTask()}>
               <Plus />
               Novo item
@@ -635,18 +659,22 @@ function BoardViewContent({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={onNewGroup}>
-                <Rows3 />
-                Adicionar grupo
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onNewColumn}>
-                <Columns3 />
-                Adicionar coluna
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onImport}>
-                <Upload />
-                Importar dados
-              </DropdownMenuItem>
+              {!readOnly && (
+                <>
+                  <DropdownMenuItem onSelect={onNewGroup}>
+                    <Rows3 />
+                    Adicionar grupo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={onNewColumn}>
+                    <Columns3 />
+                    Adicionar coluna
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={onImport}>
+                    <Upload />
+                    Importar dados
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem asChild>
                 <a href={`/api/boards/${board.id}/export`} download>
                   <Download />
@@ -760,33 +788,35 @@ function BoardViewContent({
       {(tab === 'table' || tab === 'kanban' || tab === 'calendar') && (
         <>
           <div className="board-toolbar">
-            <div className="create-item-control" role="group" aria-label="Criação de itens">
-              <Button className="create-item-button" onClick={() => onNewTask()}>
-                <Plus />
-                Novo item
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button className="create-item-more" aria-label="Mais opções de criação">
-                    <ChevronDown />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onSelect={() => onNewTask()}>
-                    <Plus />
-                    Nova tarefa
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={onNewGroup}>
-                    <Rows3 />
-                    Novo grupo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={onNewColumn}>
-                    <Columns3 />
-                    Nova coluna
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            {!readOnly && (
+              <div className="create-item-control" role="group" aria-label="Criação de itens">
+                <Button className="create-item-button" onClick={() => onNewTask()}>
+                  <Plus />
+                  Novo item
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="create-item-more" aria-label="Mais opções de criação">
+                      <ChevronDown />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onSelect={() => onNewTask()}>
+                      <Plus />
+                      Nova tarefa
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={onNewGroup}>
+                      <Rows3 />
+                      Novo grupo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={onNewColumn}>
+                      <Columns3 />
+                      Nova coluna
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
             <label className="board-search">
               <Search size={16} />
               <input
@@ -962,7 +992,7 @@ function BoardViewContent({
           )}
         </>
       )}
-      {selected.length > 0 && tab === 'table' && (
+      {selected.length > 0 && tab === 'table' && !readOnly && (
         <div className="selection-bar">
           <span>
             <Check size={16} />
@@ -1077,7 +1107,7 @@ function BoardViewContent({
                             <GroupName
                               id={group.id}
                               name={group.name}
-                              editable={groupBy === 'group'}
+                              editable={groupBy === 'group' && !readOnly}
                               onRefresh={onRefresh}
                             />
                           </h2>
@@ -1104,7 +1134,7 @@ function BoardViewContent({
                             />
                           </span>
                         )}
-                        {groupBy === 'group' && (
+                        {groupBy === 'group' && !readOnly && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
@@ -1128,7 +1158,7 @@ function BoardViewContent({
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
-                        {groupBy === 'group' && (
+                        {groupBy === 'group' && !readOnly && (
                           <IconButton
                             label={`Adicionar tarefa em ${group.name}`}
                             onClick={() => onNewTask(group.id)}
@@ -1276,10 +1306,12 @@ function BoardViewContent({
                                       )
                                     })}
                                     <th className="detail-cell">
-                                      <AddColumnMenu
-                                        label={`Adicionar coluna em ${group.name}`}
-                                        onSelect={setCreatingType}
-                                      />
+                                      {!readOnly && (
+                                        <AddColumnMenu
+                                          label={`Adicionar coluna em ${group.name}`}
+                                          onSelect={setCreatingType}
+                                        />
+                                      )}
                                     </th>
                                   </tr>
                                 </thead>
@@ -1315,7 +1347,7 @@ function BoardViewContent({
                                   />
                                 ))}
                                 <tfoot className="monday-table-footer">
-                                  {groupBy === 'group' && (
+                                  {groupBy === 'group' && !readOnly && (
                                     <tr className="monday-create-row">
                                       <td
                                         colSpan={
@@ -1416,7 +1448,7 @@ function BoardViewContent({
               }
             </GroupSorting>
           )}
-          {groupBy === 'group' && (
+          {groupBy === 'group' && !readOnly && (
             <button className="button add-group-button" onClick={onNewGroup}>
               <Plus size={16} />
               Adicionar grupo
@@ -1471,17 +1503,20 @@ function BoardViewContent({
                       onOpenEditLabels={() => setEditingLabels('status')}
                       label={`Mover ${task.title} para status`}
                       className={statusClass(task.status)}
+                      disabled={readOnly}
                       onChange={(next) => void onPatch(task.id, { status: next as Status })}
                     />
                   </article>
                 ))}
-                <button
-                  className="kanban-add"
-                  onClick={() => onNewTask(undefined, status as Status)}
-                >
-                  <Plus size={15} />
-                  Nova tarefa
-                </button>
+                {!readOnly && (
+                  <button
+                    className="kanban-add"
+                    onClick={() => onNewTask(undefined, status as Status)}
+                  >
+                    <Plus size={15} />
+                    Nova tarefa
+                  </button>
+                )}
               </section>
             )
           })}
@@ -1613,7 +1648,15 @@ function BoardViewContent({
           onSave={handleSaveLabels}
         />
       )}
-    </>
+      {sharing && (
+        <ShareDialog
+          board={board}
+          people={data.people}
+          onClose={() => setSharing(false)}
+          onSaved={onRefresh}
+        />
+      )}
+    </ReadOnlyContext.Provider>
   )
 }
 export const BoardView = memo(BoardViewContent)

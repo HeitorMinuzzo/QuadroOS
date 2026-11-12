@@ -4900,3 +4900,34 @@
 :where(:root[data-theme='dark']) .account-list-who span {
     color: var(--rf-muted)
 }
+:where(:root[data-theme='dark']) .board-nav-lock {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .share-visibility button {
+    border: 1px solid var(--rf-line);
+    border-radius: var(--rf-radius);
+    background: var(--ui-surface, #171920);
+    color: var(--rf-ink-soft)
+}
+:where(:root[data-theme='dark']) .share-visibility button:hover {
+    border-color: var(--rf-accent)
+}
+:where(:root[data-theme='dark']) .share-visibility button.active {
+    border-color: var(--rf-accent);
+    background: var(--rf-accent-soft);
+    color: var(--rf-accent)
+}
+:where(:root[data-theme='dark']) .share-visibility strong {
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .share-visibility small {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .share-members li.share-empty {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .readonly-badge {
+    border: 1px solid var(--rf-line);
+    border-radius: 999px;
+    color: var(--rf-muted)
+}

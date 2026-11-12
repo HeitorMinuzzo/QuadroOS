@@ -29,6 +29,7 @@ import {
 import { api, json } from '../api'
 import { EditableText, PillSelect } from './ui'
 import { justCreated } from '../lib/motion'
+import { useReadOnly } from '../lib/readonly'
 import { FieldSelect } from './FieldSelect'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -94,6 +95,7 @@ export function SubitemsPanel({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<string[]>([])
+  const readOnly = useReadOnly()
   const [expanded, setExpanded] = useState<string[]>([])
   useEffect(() => {
     if (revealIds?.length)
@@ -422,7 +424,7 @@ export function SubitemsPanel({
                       visibleKeys={visibleColumns.map((column) => column.key)}
                     />
                   ))}
-                  <th scope="col" className="subitem-add-column">
+                  <th scope="col" className="subitem-add-column" inert={readOnly}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -476,7 +478,7 @@ export function SubitemsPanel({
                       data-selected={selected.includes(child.id)}
                       className={`${isTaskDone(child, board) ? 'subitem-done' : ''} ${justCreated(child.createdAt) ? 'row-new' : ''}`}
                     >
-                      <td className="subitem-check-cell">
+                      <td className="subitem-check-cell" inert={readOnly}>
                         <label className="checkbox-target">
                           <input
                             type="checkbox"
@@ -495,7 +497,9 @@ export function SubitemsPanel({
                       </td>
                       <td className="subitem-name-cell">
                         <div className="subitem-title">
-                          <TaskDragHandle title={child.title} />
+                          <span className="readonly-wrap" inert={readOnly}>
+                            <TaskDragHandle title={child.title} />
+                          </span>
                           <button
                             type="button"
                             className="subitem-expand-button"
@@ -520,12 +524,14 @@ export function SubitemsPanel({
                             />
                           </button>
                           <SortableTaskName>
-                            <EditableText
-                              activation="doubleClick"
-                              value={child.title}
-                              label={`Título: ${child.title}`}
-                              onSave={(title) => void onPatch(child.id, { title })}
-                            />
+                            <span className="readonly-wrap" inert={readOnly}>
+                              <EditableText
+                                activation="doubleClick"
+                                value={child.title}
+                                label={`Título: ${child.title}`}
+                                onSave={(title) => void onPatch(child.id, { title })}
+                              />
+                            </span>
                           </SortableTaskName>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -545,14 +551,18 @@ export function SubitemsPanel({
                                   <ArrowUpRight />
                                   Abrir detalhes
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onSelect={() => onDelete([child.id])}
-                                >
-                                  <Trash2 />
-                                  Excluir subitem
-                                </DropdownMenuItem>
+                                {!readOnly && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      variant="destructive"
+                                      onSelect={() => onDelete([child.id])}
+                                    >
+                                      <Trash2 />
+                                      Excluir subitem
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                               </DropdownMenuGroup>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -577,7 +587,11 @@ export function SubitemsPanel({
                         </Button>
                       </td>
                       {visibleColumns.map((c) => (
-                        <td key={c.key} className={`subitem-field-cell subitem-${c.key}-cell`}>
+                        <td
+                          key={c.key}
+                          className={`subitem-field-cell subitem-${c.key}-cell`}
+                          inert={readOnly}
+                        >
                           {field(child, c.key)}
                         </td>
                       ))}
@@ -605,7 +619,7 @@ export function SubitemsPanel({
                   </SortableTaskRows>
                 )
               })}
-              <tfoot>
+              <tfoot hidden={readOnly}>
                 <tr>
                   <td className="subitem-check-cell" />
                   <td colSpan={visibleColumns.length + 3} className="subitem-add-cell">

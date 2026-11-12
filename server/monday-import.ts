@@ -793,6 +793,28 @@ export async function applyMondayImport(
       'INSERT INTO import_reports (id,board_id,created_at,coverage,snapshot) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb)',
       [reportId, boardId, now, JSON.stringify(coverage), JSON.stringify(snapshot)],
     )
+    // Board access from monday. Public stays public; private and shareable boards become
+    // private. Owners stay owners and other subscribers become editors (monday boards here
+    // let every member edit). A re-import only adds missing members, keeping local changes.
+    if (preview.access && options.importPeople !== false) {
+      if (fresh)
+        await tx.query('UPDATE boards SET visibility=$1 WHERE id=$2', [
+          preview.access.kind === 'public' ? 'public' : 'private',
+          boardId,
+        ])
+      const roles = new Map<string, 'owner' | 'editor'>()
+      for (const id of preview.access.subscribers) roles.set(id, 'editor')
+      for (const id of preview.access.owners) roles.set(id, 'owner')
+      for (const [sourceId, role] of roles) {
+        const personId = references.get(`monday-person:${sourceId}`)?.value
+        if (!personId || !people.some((person) => person.id === personId)) continue
+        await tx.query(
+          `INSERT INTO board_members (board_id,person_id,role) VALUES ($1,$2,$3)
+           ON CONFLICT (board_id,person_id) DO NOTHING`,
+          [boardId, personId, role],
+        )
+      }
+    }
     const previousSource = board.settings?.monday?.boardId
     const matchesLegacySource = !previousSource && previous.some((task) => task.source === source)
     board.settings = {
