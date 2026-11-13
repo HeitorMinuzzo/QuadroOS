@@ -101,6 +101,14 @@ export async function scopeWorkspace(
       ...(byBoard.get(row.board_id) ?? []),
       { personId: row.person_id, role: row.role },
     ])
+  const favorites = new Set(
+    (
+      await db.query<{ board_id: string }>(
+        'SELECT board_id FROM board_favorites WHERE person_id=$1',
+        [viewer.personId],
+      )
+    ).rows.map((row) => row.board_id),
+  )
   const sectors = await loadSectors(db)
   const mySectors = new Set(
     sectors.filter((sector) => sector.memberIds.includes(viewer.personId)).map((s) => s.id),
@@ -118,6 +126,7 @@ export async function scopeWorkspace(
       ? [
           {
             ...board,
+            favorite: favorites.has(board.id),
             members: list,
             access: { canEdit: access.canEdit, canManage: access.canManage },
           },
@@ -185,6 +194,7 @@ const ROUTES: Record<string, keyof typeof boardOf> = {
   '/api/boards/:id/columns/:columnId': 'board',
   '/api/boards/:id/export': 'board',
   '/api/boards/:id/access': 'board',
+  '/api/boards/:id/favorite': 'board',
   '/api/groups/:id': 'group',
   '/api/groups/:id/move': 'group',
   '/api/tasks/:id': 'task',
@@ -207,7 +217,11 @@ export function registerBoardAccess(app: FastifyInstance, db: Database) {
     if (kind) {
       const id = (request.params as { id: string }).id
       const need: Need =
-        route === '/api/boards/:id/access' && !reading ? 'manage' : reading ? 'view' : 'edit'
+        route === '/api/boards/:id/access' && !reading
+          ? 'manage'
+          : reading || route === '/api/boards/:id/favorite'
+            ? 'view'
+            : 'edit'
       return assertBoard(db, viewer, await boardOf[kind](db, id), need)
     }
     if (route === '/api/tasks' && request.method === 'POST') {
@@ -235,6 +249,22 @@ export function registerBoardAccess(app: FastifyInstance, db: Database) {
     // Account-wide monday imports bring every board at once; they stay with administrators.
     if (route.startsWith('/api/monday/'))
       throw new DomainError('Somente administradores podem importar do monday.', 403)
+  })
+
+  // Favorites belong to the person, not to the board.
+  app.put<{ Params: { id: string } }>('/api/boards/:id/favorite', async (request) => {
+    const { favorite } = z.object({ favorite: z.boolean() }).strict().parse(request.body)
+    if (favorite)
+      await db.query(
+        `INSERT INTO board_favorites (board_id, person_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+        [request.params.id, request.viewer.personId],
+      )
+    else
+      await db.query('DELETE FROM board_favorites WHERE board_id=$1 AND person_id=$2', [
+        request.params.id,
+        request.viewer.personId,
+      ])
+    return { favorite }
   })
 
   // Visibility and members of one board, for its owners and administrators.

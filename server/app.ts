@@ -221,7 +221,6 @@ export async function buildApp(
       .object({
         name: text.optional(),
         description: z.string().max(1000).optional(),
-        favorite: z.boolean().optional(),
         settings: z.record(z.string(), z.any()).optional(),
       })
       .strict()

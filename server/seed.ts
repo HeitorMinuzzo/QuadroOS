@@ -41,11 +41,17 @@ export async function seed(db: Database, demo = true) {
         'marketing',
         false,
       ],
-    ])
+    ]) {
       await tx.query(
-        'INSERT INTO boards (id,name,description,color,icon,favorite) VALUES ($1,$2,$3,$4,$5,$6)',
-        [id, name, description, color, icon, favorite],
+        'INSERT INTO boards (id,name,description,color,icon) VALUES ($1,$2,$3,$4,$5)',
+        [id, name, description, color, icon],
       )
+      if (favorite)
+        await tx.query(
+          `INSERT INTO board_favorites (board_id, person_id) VALUES ($1,'person-you') ON CONFLICT DO NOTHING`,
+          [id],
+        )
+    }
     const groups = [
       ['group-week', 'board-ti', 'Esta semana', '#377f68', 0],
       ['group-next', 'board-ti', 'Próximas entregas', '#6f80be', 1],

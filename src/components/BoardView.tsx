@@ -593,20 +593,19 @@ function BoardViewContent({
               <BoardIcon icon={board.icon} size={25} />
             </span>
             <h1>{board.name}</h1>
-            {readOnly ? (
+            <button
+              className={`favorite-button ${board.favorite ? 'is-favorite' : ''}`}
+              aria-label={board.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              aria-pressed={board.favorite}
+              onClick={onFavorite}
+            >
+              <Star size={19} />
+            </button>
+            {readOnly && (
               <span className="readonly-badge" title="Você pode ver este quadro, mas não editar.">
                 <Eye size={13} />
                 Somente leitura
               </span>
-            ) : (
-              <button
-                className={`favorite-button ${board.favorite ? 'is-favorite' : ''}`}
-                aria-label={board.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                aria-pressed={board.favorite}
-                onClick={onFavorite}
-              >
-                <Star size={19} />
-              </button>
             )}
           </div>
           <p>{board.description || 'Ideias organizadas. Próximos passos mais claros.'}</p>

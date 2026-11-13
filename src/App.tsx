@@ -386,8 +386,8 @@ export function App() {
   async function favorite() {
     if (!board) return
     try {
-      await api(`/boards/${board.id}`, {
-        method: 'PATCH',
+      await api(`/boards/${board.id}/favorite`, {
+        method: 'PUT',
         body: json({ favorite: !board.favorite }),
       })
       await refresh()

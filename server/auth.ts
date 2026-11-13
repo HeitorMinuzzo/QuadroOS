@@ -171,7 +171,9 @@ export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode)
     if (!path.startsWith('/api/') || path === '/api/health' || path.startsWith('/api/auth/')) return
     if (!request.viewer)
       return reply.status(401).send({ message: 'Entre com sua conta para continuar.' })
-    if (request.viewer.role === 'viewer' && !['GET', 'HEAD'].includes(request.method))
+    // Favorites are personal, so read-only accounts may still star the boards they see.
+    const personal = /^\/api\/boards\/[^/]+\/favorite$/.test(path)
+    if (request.viewer.role === 'viewer' && !personal && !['GET', 'HEAD'].includes(request.method))
       return reply.status(403).send({ message: 'Seu acesso é somente de leitura.' })
   })
 

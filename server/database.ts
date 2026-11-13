@@ -153,6 +153,13 @@ export async function migrate(db: Database) {
     `CREATE TABLE IF NOT EXISTS sectors (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, color TEXT NOT NULL, source TEXT NOT NULL DEFAULT 'local', external_id TEXT UNIQUE, created_at TEXT NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS sector_members (sector_id TEXT NOT NULL REFERENCES sectors(id) ON DELETE CASCADE, person_id TEXT NOT NULL REFERENCES people(id) ON DELETE CASCADE, PRIMARY KEY (sector_id, person_id))`,
     `CREATE INDEX IF NOT EXISTS sector_members_person_idx ON sector_members(person_id)`,
+    `CREATE TABLE IF NOT EXISTS board_favorites (board_id TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE, person_id TEXT NOT NULL REFERENCES people(id) ON DELETE CASCADE, PRIMARY KEY (board_id, person_id))`,
+    // Favorites used to be shared by everyone; they move once to the local profile and every
+    // account, after which boards.favorite stays false and only board_favorites counts.
+    `INSERT INTO board_favorites (board_id, person_id)
+     SELECT b.id, p.id FROM boards b JOIN people p ON p.id='person-you' OR p.id IN (SELECT person_id FROM accounts)
+     WHERE b.favorite ON CONFLICT DO NOTHING`,
+    `UPDATE boards SET favorite=false WHERE favorite`,
     `ALTER TABLE boards ADD COLUMN IF NOT EXISTS sector_id TEXT REFERENCES sectors(id) ON DELETE SET NULL`,
     `ALTER TABLE boards ADD COLUMN IF NOT EXISTS sector_role TEXT NOT NULL DEFAULT 'editor'`,
   ]
