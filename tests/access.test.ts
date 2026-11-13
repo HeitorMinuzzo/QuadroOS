@@ -139,7 +139,7 @@ test('board access: private boards, board roles, read-only accounts and sharing'
     })
     assert.equal(allowed.statusCode, 201)
 
-    // Owners cannot remove their own ownership; private boards keep an owner.
+    // Owners cannot remove their own ownership; administrators may leave a board without owner.
     const lockedOut = await app.inject({
       method: 'PUT',
       url: `/api/boards/${rh}/access`,
@@ -153,7 +153,7 @@ test('board access: private boards, board roles, read-only accounts and sharing'
       headers: as(admin),
       payload: { visibility: 'private', members: [{ personId: julia.id, role: 'editor' }] },
     })
-    assert.equal(noOwner.statusCode, 400)
+    assert.equal(noOwner.statusCode, 200)
 
     // Administrators see and manage every board, and only they import from monday.
     const adminView = (await boards(admin)).boards.find((board) => board.id === rh)!

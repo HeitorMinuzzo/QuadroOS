@@ -4834,13 +4834,13 @@
 :where(:root[data-theme='dark']) .auth-field {
     color: var(--rf-ink-soft)
 }
-:where(:root[data-theme='dark']) .auth-field input, :where(:root[data-theme='dark']) .invite-form input {
+:where(:root[data-theme='dark']) .auth-field input, :where(:root[data-theme='dark']) .invite-form input, :where(:root[data-theme='dark']) .sector-create input, :where(:root[data-theme='dark']) .sector-name input {
     border: 1px solid var(--rf-line-strong);
     border-radius: var(--rf-radius-sm);
     background: #171920;
     color: var(--rf-ink)
 }
-:where(:root[data-theme='dark']) .auth-field input:focus, :where(:root[data-theme='dark']) .invite-form input:focus {
+:where(:root[data-theme='dark']) .auth-field input:focus, :where(:root[data-theme='dark']) .invite-form input:focus, :where(:root[data-theme='dark']) .sector-create input:focus, :where(:root[data-theme='dark']) .sector-name input:focus {
     border-color: var(--ui-focus);
     box-shadow: var(--ui-focus-shadow);
     outline: none
@@ -4930,4 +4930,35 @@
     border: 1px solid var(--rf-line);
     border-radius: 999px;
     color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .share-sector p {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .sector-create label, :where(:root[data-theme='dark']) .sector-name {
+    color: var(--rf-ink-soft)
+}
+:where(:root[data-theme='dark']) .sector-notice {
+    border-radius: var(--rf-radius);
+    background: var(--rf-accent-soft);
+    color: var(--rf-ink-soft)
+}
+:where(:root[data-theme='dark']) .sector-row {
+    border: 0;
+    background: transparent;
+    color: inherit
+}
+:where(:root[data-theme='dark']) .sector-row:hover {
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .sector-dot {
+    border-radius: 4px
+}
+:where(:root[data-theme='dark']) .sector-boards {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .sector-boards strong {
+    color: var(--rf-ink-soft)
+}
+:where(:root[data-theme='dark']) .sector-confirm {
+    color: var(--rf-ink-soft)
 }

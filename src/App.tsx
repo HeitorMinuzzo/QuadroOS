@@ -43,6 +43,7 @@ import { ColumnEditor } from './components/ColumnEditor'
 import { WorkspaceView } from './components/WorkspaceView'
 import { MyWorkView } from './components/MyWorkView'
 import { AccountMenu, PasswordDialog, UsersDialog } from './components/Accounts'
+import { SectorsDialog } from './components/SectorsDialog'
 import { useTheme, type ThemePreference } from './lib/theme'
 import { enter } from './lib/motion'
 import { boardFolders, boardWorkspace, LOCAL_WORKSPACE, listWorkspaces } from './lib/workspaces'
@@ -60,6 +61,7 @@ type ModalName =
   | 'notifications'
   | 'delete'
   | 'users'
+  | 'sectors'
   | 'password'
   | null
 const WORKSPACE_KEY = 'quadroos:workspace'
@@ -561,6 +563,7 @@ export function App() {
             <AccountMenu
               person={data.people.find((p) => p.id === me)}
               onUsers={() => setModal('users')}
+              onSectors={() => setModal('sectors')}
               onPassword={() => setModal('password')}
             />
           </div>
@@ -816,6 +819,9 @@ export function App() {
       )}
       {modal === 'users' && <UsersDialog onClose={closeModal} onChanged={() => void refresh()} />}
       {modal === 'password' && <PasswordDialog onClose={closeModal} />}
+      {modal === 'sectors' && (
+        <SectorsDialog data={data} onClose={closeModal} onChanged={refresh} />
+      )}
       {modal === 'settings' && (
         <Modal
           title="Configurações do workspace"
@@ -847,6 +853,18 @@ export function App() {
                 <dt>Persistência</dt>
                 <dd>{data.database}</dd>
               </div>
+              {(session.mode !== 'local' || session.account?.role === 'admin') && (
+                <div>
+                  <dt>Setores</dt>
+                  <dd>
+                    <button className="text-button" onClick={() => setModal('sectors')}>
+                      {data.sectors?.length
+                        ? `${data.sectors.length} ${data.sectors.length === 1 ? 'setor' : 'setores'} · gerenciar`
+                        : 'Criar setores'}
+                    </button>
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt>Idioma</dt>
                 <dd>Português do Brasil</dd>

@@ -1,3 +1,4 @@
+import { sectorFolder } from './sectors.ts'
 import { randomUUID } from 'node:crypto'
 import { camelRow, type Database } from './database.ts'
 import { createBoard, insertTask } from './repository.ts'
@@ -815,6 +816,14 @@ export async function applyMondayImport(
         )
       }
     }
+    // A new board joins the existing sector named like its monday folder, if there is one.
+    const folder = sectorFolder({ mondayFolderPath: preview.mondayFolderPath })
+    if (fresh && folder)
+      await tx.query(
+        `UPDATE boards SET sector_id=(SELECT id FROM sectors WHERE lower(name)=lower($1))
+         WHERE id=$2 AND sector_id IS NULL`,
+        [folder.name.trim(), boardId],
+      )
     const previousSource = board.settings?.monday?.boardId
     const matchesLegacySource = !previousSource && previous.some((task) => task.source === source)
     board.settings = {

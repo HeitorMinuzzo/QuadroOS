@@ -161,6 +161,9 @@ export interface Board {
   /** Public boards are open to every account; private ones only to their members. */
   visibility?: BoardVisibility
   members?: BoardMember[]
+  /** Everyone in this sector gets `sectorRole` on the board, on top of the direct members. */
+  sectorId?: string | null
+  sectorRole?: SectorRole
   /** What the signed-in person may do here, computed by the server. */
   access?: BoardAccess
 }
@@ -169,6 +172,15 @@ export type BoardRole = 'owner' | 'editor' | 'viewer'
 export interface BoardMember {
   personId: string
   role: BoardRole
+}
+export type SectorRole = 'editor' | 'viewer'
+/** A team of people (from monday folders, created here, or later from Keycloak groups). */
+export interface Sector {
+  id: string
+  name: string
+  color: string
+  source: string
+  memberIds: string[]
 }
 export interface BoardAccess {
   canEdit: boolean
@@ -275,6 +287,7 @@ export interface Workspace {
   imports: ImportRun[]
   database: string
   attachments?: FileAttachment[]
+  sectors?: Sector[]
 }
 export const EMPTY_WORKSPACE: Workspace = {
   boards: [],

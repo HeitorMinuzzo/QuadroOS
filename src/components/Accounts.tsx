@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Copy, KeyRound, LogOut, UserPlus, Users } from 'lucide-react'
+import { Building2, Copy, KeyRound, LogOut, UserPlus, Users } from 'lucide-react'
 import { api, json } from '../api'
 import type { AccountInfo, AccountRole, Person } from '../../shared/domain'
 import { useSession } from '../lib/session'
@@ -29,10 +29,12 @@ const ROLE_OPTIONS = (['admin', 'member', 'viewer'] as const).map((value) => ({
 export function AccountMenu({
   person,
   onUsers,
+  onSectors,
   onPassword,
 }: {
   person?: Person
   onUsers: () => void
+  onSectors: () => void
   onPassword: () => void
 }) {
   const { session, refresh } = useSession()
@@ -60,6 +62,12 @@ export function AccountMenu({
           <DropdownMenuItem onSelect={onUsers}>
             <Users />
             Usuários
+          </DropdownMenuItem>
+        )}
+        {account.role === 'admin' && (
+          <DropdownMenuItem onSelect={onSectors}>
+            <Building2 />
+            Setores
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />

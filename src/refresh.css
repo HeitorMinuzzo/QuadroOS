@@ -1549,7 +1549,9 @@ dialog.modal::backdrop,
   font-weight: 550;
 }
 .auth-field input,
-.invite-form input {
+.invite-form input,
+.sector-create input,
+.sector-name input {
   height: 40px;
   padding: 0 12px;
   border: 1px solid var(--rf-line-strong);
@@ -1560,7 +1562,9 @@ dialog.modal::backdrop,
   font-weight: 400;
 }
 .auth-field input:focus,
-.invite-form input:focus {
+.invite-form input:focus,
+.sector-create input:focus,
+.sector-name input:focus {
   border-color: var(--ui-focus);
   box-shadow: var(--ui-focus-shadow);
   outline: none;
@@ -1818,4 +1822,120 @@ dialog.modal::backdrop,
   font-size: 12px;
   font-weight: 550;
   white-space: nowrap;
+}
+
+/* Sectors: the admin dialog and the sector block of the Share dialog. */
+.share-sector {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 8px 10px;
+}
+.share-sector p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--rf-muted);
+  font-size: 12px;
+}
+.sector-create {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: 10px;
+}
+.sector-create label,
+.sector-name {
+  display: grid;
+  gap: 6px;
+  color: var(--rf-ink-soft);
+  font-size: 12px;
+  font-weight: 550;
+}
+.sector-create .button {
+  height: 40px;
+}
+.sector-notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--rf-radius);
+  background: var(--rf-accent-soft);
+  color: var(--rf-ink-soft);
+  font-size: 13px;
+}
+.sector-list {
+  max-height: min(420px, 50vh);
+  overflow-y: auto;
+}
+.account-list.sector-list li {
+  display: block;
+  padding: 0;
+}
+.sector-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sector-row:hover {
+  background: var(--ui-subtle);
+}
+.sector-row .account-list-who {
+  flex: 1;
+}
+.sector-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+.sector-avatars {
+  display: flex;
+}
+.sector-avatars .avatar + .avatar {
+  margin-left: -6px;
+}
+.sector-editor {
+  display: grid;
+  gap: 14px;
+}
+.sector-editor > .text-button {
+  justify-self: start;
+}
+.account-list li.sector-member {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.sector-boards {
+  margin: 0;
+  color: var(--rf-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.sector-boards strong {
+  color: var(--rf-ink-soft);
+}
+.sector-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sector-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rf-ink-soft);
+  font-size: 13px;
+}
+@media (max-width: 640px) {
+  .sector-create,
+  .share-sector {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

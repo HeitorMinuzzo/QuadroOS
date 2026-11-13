@@ -150,6 +150,11 @@ export async function migrate(db: Database) {
       role TEXT NOT NULL CHECK (role IN ('owner','editor','viewer')),
       PRIMARY KEY (board_id, person_id))`,
     `CREATE INDEX IF NOT EXISTS board_members_person_idx ON board_members(person_id)`,
+    `CREATE TABLE IF NOT EXISTS sectors (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, color TEXT NOT NULL, source TEXT NOT NULL DEFAULT 'local', external_id TEXT UNIQUE, created_at TEXT NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS sector_members (sector_id TEXT NOT NULL REFERENCES sectors(id) ON DELETE CASCADE, person_id TEXT NOT NULL REFERENCES people(id) ON DELETE CASCADE, PRIMARY KEY (sector_id, person_id))`,
+    `CREATE INDEX IF NOT EXISTS sector_members_person_idx ON sector_members(person_id)`,
+    `ALTER TABLE boards ADD COLUMN IF NOT EXISTS sector_id TEXT REFERENCES sectors(id) ON DELETE SET NULL`,
+    `ALTER TABLE boards ADD COLUMN IF NOT EXISTS sector_role TEXT NOT NULL DEFAULT 'editor'`,
   ]
   await db.transaction(async (tx) => {
     for (const sql of statements) await tx.query(sql)

@@ -1,20 +1,30 @@
 // Board-level access. Every /api route that touches a board, group, task, comment, file or import
 // goes through one preHandler, so a new route cannot forget the check.
 //
-//   view   — public boards for every account; private boards for their members.
+//   view   — public boards for every account; private boards for their members, direct or through
+//            the board's sector (the stronger of the two roles counts).
 //   edit   — viewing plus an account that is not read-only and, on private boards (or when listed
 //            as a board viewer), an owner/editor membership.
 //   manage — visibility and members: board owners and administrators.
 // Without sign-in (AUTH_MODE=none) and for administrators every board is fully open.
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import type { BoardAccess, BoardRole, Workspace } from '../shared/domain.ts'
+import type { BoardAccess, BoardRole, Sector, Workspace } from '../shared/domain.ts'
 import type { Database } from './database.ts'
 import { DomainError } from './errors.ts'
 import type { Viewer } from './auth.ts'
 
 type Need = 'view' | 'edit' | 'manage'
 const FULL: BoardAccess = { canEdit: true, canManage: true }
+
+const RANK: Record<BoardRole, number> = { viewer: 1, editor: 2, owner: 3 }
+/** The stronger of a direct membership and the role the board gives its sector. */
+export function strongest(...roles: (BoardRole | null | undefined)[]) {
+  return roles.reduce<BoardRole | null>(
+    (best, role) => (role && (!best || RANK[role] > RANK[best]) ? role : best),
+    null,
+  )
+}
 
 interface BoardFacts {
   visibility: string
@@ -33,13 +43,25 @@ function decide(viewer: Viewer, facts: BoardFacts | undefined) {
 }
 
 async function facts(db: Database, viewer: Viewer, boardIds: string[]) {
-  const { rows } = await db.query<{ id: string; visibility: string; role: BoardRole | null }>(
-    `SELECT b.id, b.visibility, m.role FROM boards b
+  const { rows } = await db.query<{
+    id: string
+    visibility: string
+    role: BoardRole | null
+    sector_role: BoardRole | null
+  }>(
+    `SELECT b.id, b.visibility, m.role, CASE WHEN s.person_id IS NULL THEN NULL ELSE b.sector_role END AS sector_role
+     FROM boards b
      LEFT JOIN board_members m ON m.board_id=b.id AND m.person_id=$2
+     LEFT JOIN sector_members s ON s.sector_id=b.sector_id AND s.person_id=$2
      WHERE b.id = ANY($1::text[])`,
     [boardIds, viewer.personId],
   )
-  return new Map(rows.map((row) => [row.id, { visibility: row.visibility, role: row.role }]))
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      { visibility: row.visibility, role: strongest(row.role, row.sector_role) },
+    ]),
+  )
 }
 
 export async function assertBoard(
@@ -79,11 +101,18 @@ export async function scopeWorkspace(
       ...(byBoard.get(row.board_id) ?? []),
       { personId: row.person_id, role: row.role },
     ])
+  const sectors = await loadSectors(db)
+  const mySectors = new Set(
+    sectors.filter((sector) => sector.memberIds.includes(viewer.personId)).map((s) => s.id),
+  )
   const boards = state.boards.flatMap((board) => {
     const list = byBoard.get(board.id) ?? []
     const access = decide(viewer, {
       visibility: board.visibility ?? 'public',
-      role: list.find((member) => member.personId === viewer.personId)?.role ?? null,
+      role: strongest(
+        list.find((member) => member.personId === viewer.personId)?.role,
+        board.sectorId && mySectors.has(board.sectorId) ? (board.sectorRole ?? 'editor') : null,
+      ),
     })
     return access.canView
       ? [
@@ -95,19 +124,37 @@ export async function scopeWorkspace(
         ]
       : []
   })
-  if (boards.length === state.boards.length) return { ...state, boards }
+  if (boards.length === state.boards.length) return { ...state, boards, sectors }
   const visible = new Set(boards.map((board) => board.id))
   const tasks = state.tasks.filter((task) => visible.has(task.boardId))
   const taskIds = new Set(tasks.map((task) => task.id))
   return {
     ...state,
     boards,
+    sectors,
     groups: state.groups.filter((group) => visible.has(group.boardId)),
     tasks,
     comments: state.comments.filter((comment) => taskIds.has(comment.taskId)),
     attachments: (state.attachments ?? []).filter((file) => taskIds.has(file.taskId)),
     imports: state.imports.filter((run) => visible.has(run.boardId)),
   }
+}
+
+export async function loadSectors(db: Database): Promise<Sector[]> {
+  const sectors = (
+    await db.query<{ id: string; name: string; color: string; source: string }>(
+      'SELECT id, name, color, source FROM sectors ORDER BY name',
+    )
+  ).rows
+  const members = (
+    await db.query<{ sector_id: string; person_id: string }>(
+      'SELECT sector_id, person_id FROM sector_members ORDER BY person_id',
+    )
+  ).rows
+  return sectors.map((sector) => ({
+    ...sector,
+    memberIds: members.filter((m) => m.sector_id === sector.id).map((m) => m.person_id),
+  }))
 }
 
 async function one(db: Database, sql: string, id: string) {
@@ -202,13 +249,18 @@ export function registerBoardAccess(app: FastifyInstance, db: Database) {
               .strict(),
           )
           .max(1000),
+        sectorId: z.string().min(1).nullable().optional(),
+        sectorRole: z.enum(['editor', 'viewer']).optional(),
       })
       .strict()
       .parse(request.body)
     const unique = new Map(data.members.map((member) => [member.personId, member.role]))
-    if (data.visibility === 'private' && ![...unique.values()].includes('owner'))
-      throw new DomainError('Um quadro privado precisa de pelo menos um dono.', 400)
-    // An owner cannot lock themselves out of the board they are managing.
+    if (data.sectorId) {
+      const found = (await db.query('SELECT id FROM sectors WHERE id=$1', [data.sectorId])).rows
+      if (!found.length) throw new DomainError('Setor não encontrado.', 400)
+    }
+    // An owner cannot lock themselves out of the board they are managing. Administrators may
+    // leave a private board to a sector alone: they can always manage it.
     const me = request.viewer
     if (me.accountId && me.role !== 'admin' && unique.get(me.personId) !== 'owner')
       throw new DomainError('Mantenha-se como dono para continuar gerenciando este quadro.', 400)
@@ -221,6 +273,12 @@ export function registerBoardAccess(app: FastifyInstance, db: Database) {
         data.visibility,
         request.params.id,
       ])
+      if (data.sectorId !== undefined)
+        await tx.query('UPDATE boards SET sector_id=$1, sector_role=$2 WHERE id=$3', [
+          data.sectorId,
+          data.sectorRole ?? 'editor',
+          request.params.id,
+        ])
       await tx.query('DELETE FROM board_members WHERE board_id=$1', [request.params.id])
       for (const [personId, role] of unique)
         await tx.query('INSERT INTO board_members (board_id,person_id,role) VALUES ($1,$2,$3)', [
@@ -230,6 +288,8 @@ export function registerBoardAccess(app: FastifyInstance, db: Database) {
         ])
       return {
         visibility: data.visibility,
+        sectorId: data.sectorId,
+        sectorRole: data.sectorRole,
         members: [...unique].map(([personId, role]) => ({ personId, role })),
       }
     })

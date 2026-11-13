@@ -38,6 +38,7 @@ import { jsonObject } from '../shared/rich-values.ts'
 import { migrateBoardLabels } from './board-labels.ts'
 import { authMode, registerAuth, type AuthMode } from './auth.ts'
 import { addOwner, registerBoardAccess, scopeWorkspace } from './access.ts'
+import { registerSectors } from './sectors.ts'
 
 const text = z.string().trim().min(1).max(300)
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/)
@@ -154,6 +155,7 @@ export async function buildApp(
   registerAuth(app, db, options.auth ?? authMode())
   app.get('/api/health', async () => ({ ok: true, version: '0.1.0', database: db.kind }))
   registerBoardAccess(app, db)
+  registerSectors(app, db)
   app.get('/api/workspace', async (request) =>
     scopeWorkspace(db, request.viewer, await workspace(db)),
   )

@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Globe, Lock, X } from 'lucide-react'
 import { api, json } from '../api'
-import type { Board, BoardMember, BoardRole, BoardVisibility, Person } from '../../shared/domain'
+import type {
+  Board,
+  BoardMember,
+  BoardRole,
+  BoardVisibility,
+  Person,
+  Sector,
+  SectorRole,
+} from '../../shared/domain'
 import { Avatar, Modal } from './ui'
 import { FieldSelect } from './FieldSelect'
 import { useSession } from '../lib/session'
@@ -12,21 +20,28 @@ const ROLES: { value: BoardRole; label: string }[] = [
   { value: 'viewer', label: 'Leitor' },
 ]
 
+const NO_SECTOR = 'none'
+
 /** Visibility and members of one board, for its owners and administrators. */
 export function ShareDialog({
   board,
   people,
+  sectors = [],
   onClose,
   onSaved,
 }: {
   board: Board
   people: Person[]
+  sectors?: Sector[]
   onClose: () => void
   onSaved: () => Promise<void>
 }) {
   const { personId, session } = useSession()
   const [visibility, setVisibility] = useState<BoardVisibility>(board.visibility ?? 'public')
   const [members, setMembers] = useState<BoardMember[]>(board.members ?? [])
+  const [sectorId, setSectorId] = useState(board.sectorId ?? '')
+  const [sectorRole, setSectorRole] = useState<SectorRole>(board.sectorRole ?? 'editor')
+  const sector = sectors.find((item) => item.id === sectorId)
   const [adding, setAdding] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -42,7 +57,7 @@ export function ShareDialog({
     try {
       await api(`/boards/${board.id}/access`, {
         method: 'PUT',
-        body: json({ visibility, members }),
+        body: json({ visibility, members, sectorId: sectorId || null, sectorRole }),
       })
       await onSaved()
       onClose()
@@ -69,7 +84,12 @@ export function ShareDialog({
                 'Público',
                 'Todas as contas veem; membros e administradores editam.',
               ],
-              ['private', Lock, 'Privado', 'Somente os membros abaixo (e administradores) veem.'],
+              [
+                'private',
+                Lock,
+                'Privado',
+                'Somente o setor e os membros abaixo (e administradores) veem.',
+              ],
             ] as const
           ).map(([value, Icon, title, detail]) => (
             <button
@@ -87,6 +107,36 @@ export function ShareDialog({
               </span>
             </button>
           ))}
+        </div>
+
+        <div className="share-sector">
+          <FieldSelect
+            label="Setor do quadro"
+            heading="Setor"
+            value={sectorId || NO_SECTOR}
+            onChange={(value) => setSectorId(value === NO_SECTOR ? '' : value)}
+            options={[
+              { value: NO_SECTOR, label: 'Sem setor' },
+              ...sectors.map((item) => ({ value: item.id, label: item.name, color: item.color })),
+            ]}
+          />
+          <FieldSelect
+            label="Papel do setor no quadro"
+            value={sectorRole}
+            disabled={!sectorId}
+            onChange={(value) => setSectorRole(value as SectorRole)}
+            options={[
+              { value: 'editor', label: 'Editam' },
+              { value: 'viewer', label: 'Só veem' },
+            ]}
+          />
+          <p>
+            {sector
+              ? `${sector.memberIds.length} ${sector.memberIds.length === 1 ? 'pessoa' : 'pessoas'} de ${sector.name} ${sectorRole === 'editor' ? 'podem editar' : 'podem ver'} este quadro, além dos membros abaixo.`
+              : sectors.length
+                ? 'Escolha um setor para dar acesso a toda a equipe de uma vez.'
+                : 'Nenhum setor criado. Administradores criam setores no menu da conta.'}
+          </p>
         </div>
 
         <div className="share-add">
@@ -107,7 +157,9 @@ export function ShareDialog({
             <li className="share-empty">
               {visibility === 'public'
                 ? 'Sem membros: o quadro segue aberto para todas as contas.'
-                : 'Adicione ao menos um dono.'}
+                : sector
+                  ? `Sem membros diretos: só ${sector.name} e administradores veem.`
+                  : 'Sem membros: só administradores veem.'}
             </li>
           )}
           {members.map((member) => {

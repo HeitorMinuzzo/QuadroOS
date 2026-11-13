@@ -51,7 +51,7 @@ Conversas e respostas preservam IDs, autores e datas. O balão abre a aba Atuali
 
 Receitas legadas com exatamente dois blocos conhecidos — gatilho `223025` e ação `40` — são traduzidas em **status → mover para grupo** quando coluna, etiqueta e destino são resolvidos. Mantêm o estado ativo/pausado e só executam em futuras mudanças reais, depois da importação. A opção de importar regras pode ser desmarcada. Outras receitas e workflows ficam como referência para revisão manual. Credenciais de integrações não são copiadas.
 
-Acesso do quadro: o tipo (`board_kind`) vira a visibilidade — `public` fica público; `private` e `share` ficam privados. Donos (`owners`) entram como donos e assinantes (`subscribers`) como editores, criando as pessoas que faltarem quando "Importar pessoas" está ligado. Reimportar só acrescenta membros ausentes: visibilidade e papéis ajustados no QuadroOS são mantidos. A importação pela conta do monday (prévia, lote e sessões) é restrita a administradores.
+Acesso do quadro: o tipo (`board_kind`) vira a visibilidade — `public` fica público; `private` e `share` ficam privados. Donos (`owners`) entram como donos e assinantes (`subscribers`) como editores, criando as pessoas que faltarem quando "Importar pessoas" está ligado. Reimportar só acrescenta membros ausentes: visibilidade e papéis ajustados no QuadroOS são mantidos. A importação pela conta do monday (prévia, lote e sessões) é restrita a administradores. As pastas do monday podem virar setores do QuadroOS (Setores → Criar das pastas do monday); quadros importados depois entram no setor da sua pasta.
 
 Convites, equipes, permissões por coluna, dashboards, notificações, apps, cobrança e sincronização continuam fora da migração.
 

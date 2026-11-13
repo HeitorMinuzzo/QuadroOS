@@ -1652,6 +1652,7 @@ function BoardViewContent({
         <ShareDialog
           board={board}
           people={data.people}
+          sectors={data.sectors}
           onClose={() => setSharing(false)}
           onSaved={onRefresh}
         />
