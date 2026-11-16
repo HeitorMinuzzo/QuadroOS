@@ -469,7 +469,7 @@ export interface AccountInfo {
 }
 /** GET /api/auth/session. In mode "none" there is no sign-in and personId is the local profile. */
 export interface SessionInfo {
-  mode: 'none' | 'local'
+  mode: 'none' | 'local' | 'oidc'
   needsSetup: boolean
   account: AccountInfo | null
   personId: string | null

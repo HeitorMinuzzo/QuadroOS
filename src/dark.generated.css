@@ -4962,3 +4962,8 @@
 :where(:root[data-theme='dark']) .sector-confirm {
     color: var(--rf-ink-soft)
 }
+:where(:root[data-theme='dark']) .sso-note {
+    border-radius: var(--rf-radius);
+    background: var(--rf-accent-soft);
+    color: var(--rf-ink-soft)
+}

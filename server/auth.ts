@@ -3,7 +3,8 @@
 // AUTH_MODE selects how people sign in:
 //   none  — no sign-in; every request acts as the built-in "Você" profile (the original behaviour).
 //   local — email and password stored here (scrypt), with an admin creating the other accounts.
-//   oidc  — reserved for Keycloak; accounts are then linked through external_id.
+//   oidc  — user and password of the company account, checked with Keycloak (see oidc.ts);
+//           accounts are linked through external_id and roles stay here.
 import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
@@ -11,8 +12,9 @@ import { z } from 'zod'
 import { initials, type AccountRole, type SessionInfo } from '../shared/domain.ts'
 import type { Database } from './database.ts'
 import { DomainError } from './errors.ts'
+import { companySignIn, oidcConfig, type OidcConfig } from './oidc.ts'
 
-export type AuthMode = 'none' | 'local'
+export type AuthMode = 'none' | 'local' | 'oidc'
 export interface Viewer {
   personId: string
   role: AccountRole
@@ -55,7 +57,7 @@ function temporaryPassword() {
 }
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex')
 
-function readCookie(request: FastifyRequest, name: string) {
+export function readCookie(request: FastifyRequest, name: string) {
   for (const part of (request.headers.cookie ?? '').split(';')) {
     const [key, ...value] = part.trim().split('=')
     if (key === name) return decodeURIComponent(value.join('='))
@@ -105,7 +107,7 @@ const publicAccount = (row: AccountRow) => ({
 })
 
 /** Finds the person with this email, or creates one, so imported assignees keep their tasks. */
-async function personFor(db: Database, address: string, displayName: string) {
+export async function personFor(db: Database, address: string, displayName: string) {
   const existing = (
     await db.query<{ id: string }>('SELECT id FROM people WHERE lower(email)=$1', [address])
   ).rows[0]
@@ -121,7 +123,7 @@ async function personFor(db: Database, address: string, displayName: string) {
   ])
   return id
 }
-async function startSession(
+export async function startSession(
   db: Database,
   request: FastifyRequest,
   reply: FastifyReply,
@@ -145,7 +147,12 @@ async function activeAdmins(db: Database, except?: string) {
   return Number(rows[0].n)
 }
 
-export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode) {
+export function registerAuth(
+  app: FastifyInstance,
+  db: Database,
+  mode: AuthMode,
+  options: { oidc?: OidcConfig; oidcFetch?: typeof fetch } = {},
+) {
   app.decorateRequest('viewer', null as unknown as Viewer)
 
   // Resolves who is calling. In local mode every API route except sign-in needs a session,
@@ -182,10 +189,15 @@ export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode)
       throw new DomainError('Somente administradores podem gerenciar usuários.', 403)
   }
 
+  const company =
+    mode === 'oidc' ? companySignIn(db, options.oidc ?? oidcConfig(), options.oidcFetch) : null
+
   app.get('/api/auth/session', async (request): Promise<SessionInfo> => {
     if (mode === 'none')
       return { mode, needsSetup: false, account: null, personId: LOCAL_PROFILE.personId }
-    const needsSetup = !(await db.query('SELECT id FROM accounts LIMIT 1')).rows.length
+    // With Keycloak the first person to sign in becomes the administrator; no setup screen.
+    const needsSetup =
+      mode === 'local' && !(await db.query('SELECT id FROM accounts LIMIT 1')).rows.length
     if (!request.viewer?.accountId) return { mode, needsSetup, account: null, personId: null }
     const row = (
       await db.query<AccountRow>(
@@ -197,12 +209,21 @@ export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode)
   })
 
   if (mode === 'none') return
+  // Passwords only exist with local sign-in.
+  const local = () => {
+    if (mode !== 'local')
+      throw new DomainError(
+        'O acesso é pelo login da empresa (Keycloak); senhas não ficam no QuadroOS.',
+        400,
+      )
+  }
 
   // First run: the first person to open the app creates the administrator account.
   app.post(
     '/api/auth/setup',
     { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     async (request, reply) => {
+      local()
       const data = z.object({ name, email, password }).strict().parse(request.body)
       const accountId = await db.transaction(async (tx) => {
         await tx.query('LOCK TABLE accounts IN EXCLUSIVE MODE')
@@ -225,6 +246,21 @@ export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode)
     '/api/auth/login',
     { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     async (request, reply) => {
+      if (company) {
+        const data = z
+          .object({
+            username: z.string().trim().min(1, 'Informe o usuário.').max(200),
+            password: z.string().min(1, 'Informe a senha.').max(200),
+          })
+          .strict()
+          .parse(request.body)
+        // A domain prefix (ATHENAS then a backslash) or suffix (@athenas.local) is dropped:
+        // Keycloak knows the person by the network login alone.
+        const username = data.username.split(/[\\/]/).pop()!.split('@')[0]
+        await company(request, reply, username, data.password)
+        return { ok: true }
+      }
+      local()
       const data = z
         .object({ email: z.string().trim().toLowerCase().max(200), password: z.string().max(200) })
         .strict()
@@ -250,6 +286,7 @@ export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode)
     '/api/auth/password',
     { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     async (request) => {
+      local()
       if (!request.viewer?.accountId)
         throw new DomainError('Entre com sua conta para continuar.', 401)
       const data = z
@@ -285,6 +322,7 @@ export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode)
   // Admins create accounts with a temporary password, shown once, that must be changed on sign-in.
   app.post('/api/accounts', async (request, reply) => {
     requireAdmin(request)
+    local()
     const data = z.object({ name, email, role }).strict().parse(request.body)
     const temporary = temporaryPassword()
     const account = await db.transaction(async (tx) => {
@@ -349,6 +387,7 @@ export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode)
 
   app.post<{ Params: { id: string } }>('/api/accounts/:id/reset-password', async (request) => {
     requireAdmin(request)
+    local()
     const temporary = temporaryPassword()
     const { rows } = await db.query(
       'UPDATE accounts SET password_hash=$1, must_change_password=true WHERE id=$2 RETURNING id',
@@ -361,5 +400,5 @@ export function registerAuth(app: FastifyInstance, db: Database, mode: AuthMode)
 }
 
 export function authMode(value = process.env.AUTH_MODE): AuthMode {
-  return value === 'local' ? 'local' : 'none'
+  return value === 'local' || value === 'oidc' ? value : 'none'
 }

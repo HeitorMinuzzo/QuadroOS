@@ -54,10 +54,12 @@ export function AccountMenu({
           <span>{ROLE_NAMES[account.role]}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={onPassword}>
-          <KeyRound />
-          Alterar senha
-        </DropdownMenuItem>
+        {session.mode === 'local' && (
+          <DropdownMenuItem onSelect={onPassword}>
+            <KeyRound />
+            Alterar senha
+          </DropdownMenuItem>
+        )}
         {account.role === 'admin' && (
           <DropdownMenuItem onSelect={onUsers}>
             <Users />
@@ -181,43 +183,51 @@ export function UsersDialog({
             </div>
           </div>
         )}
-        <form className="invite-form" onSubmit={invite}>
-          <h3>
-            <UserPlus size={16} />
-            Adicionar pessoa
-          </h3>
-          <label>
-            <span>Nome</span>
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={120}
-            />
-          </label>
-          <label>
-            <span>E-mail</span>
-            <input
-              required
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              maxLength={200}
-            />
-          </label>
-          <div className="invite-role">
-            <span>Papel</span>
-            <FieldSelect
-              label="Papel da nova conta"
-              value={role}
-              onChange={(value) => setRole(value as AccountRole)}
-              options={ROLE_OPTIONS}
-            />
-          </div>
-          <button className="button primary" type="submit" disabled={busy}>
-            Criar conta
-          </button>
-        </form>
+        {session.mode === 'oidc' && (
+          <p className="sso-note">
+            As pessoas entram com a conta da empresa (grupo <strong>QuadroOS</strong> no AD) e
+            chegam como <strong>Leitor</strong>. Aqui você muda o papel ou desativa o acesso.
+          </p>
+        )}
+        {session.mode === 'local' && (
+          <form className="invite-form" onSubmit={invite}>
+            <h3>
+              <UserPlus size={16} />
+              Adicionar pessoa
+            </h3>
+            <label>
+              <span>Nome</span>
+              <input
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={120}
+              />
+            </label>
+            <label>
+              <span>E-mail</span>
+              <input
+                required
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={200}
+              />
+            </label>
+            <div className="invite-role">
+              <span>Papel</span>
+              <FieldSelect
+                label="Papel da nova conta"
+                value={role}
+                onChange={(value) => setRole(value as AccountRole)}
+                options={ROLE_OPTIONS}
+              />
+            </div>
+            <button className="button primary" type="submit" disabled={busy}>
+              Criar conta
+            </button>
+          </form>
+        )}
         {error && (
           <p className="form-error" role="alert">
             {error}
@@ -257,22 +267,24 @@ export function UsersDialog({
                 options={ROLE_OPTIONS}
               />
               <div className="account-list-actions">
-                <button
-                  type="button"
-                  className="button secondary"
-                  disabled={busy || !account.active}
-                  onClick={() =>
-                    void run(async () => {
-                      const result = await api<{ temporaryPassword: string }>(
-                        `/accounts/${account.id}/reset-password`,
-                        { method: 'POST' },
-                      )
-                      setSecret({ email: account.email, password: result.temporaryPassword })
-                    })
-                  }
-                >
-                  Redefinir senha
-                </button>
+                {session.mode === 'local' && (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    disabled={busy || !account.active}
+                    onClick={() =>
+                      void run(async () => {
+                        const result = await api<{ temporaryPassword: string }>(
+                          `/accounts/${account.id}/reset-password`,
+                          { method: 'POST' },
+                        )
+                        setSecret({ email: account.email, password: result.temporaryPassword })
+                      })
+                    }
+                  >
+                    Redefinir senha
+                  </button>
+                )}
                 {account.id !== session.account?.id && (
                   <button
                     type="button"

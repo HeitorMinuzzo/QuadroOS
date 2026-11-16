@@ -4,7 +4,12 @@ import { App } from './App'
 import { TooltipProvider } from './components/ui/tooltip'
 import { Loading } from './components/ui'
 import { SessionProvider } from './lib/session'
-import { ForcedPasswordScreen, LoginScreen, SetupScreen } from './components/AuthScreens'
+import {
+  CompanyLoginScreen,
+  ForcedPasswordScreen,
+  LoginScreen,
+  SetupScreen,
+} from './components/AuthScreens'
 import './theme.css'
 import './styles.css'
 import './workflow.css'
@@ -23,7 +28,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <TooltipProvider>
       <SessionProvider fallback={<Loading />}>
         {(session) =>
-          session.mode === 'local' && !session.account ? (
+          session.mode === 'oidc' && !session.account ? (
+            <CompanyLoginScreen />
+          ) : session.mode === 'local' && !session.account ? (
             session.needsSetup ? (
               <SetupScreen />
             ) : (

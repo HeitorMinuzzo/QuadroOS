@@ -159,6 +159,45 @@ export function LoginScreen() {
   )
 }
 
+/** Company account: the same network user and password, checked with Keycloak by the server. */
+export function CompanyLoginScreen() {
+  const { refresh } = useSession()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const { busy, error, submit } = useSubmit(async () => {
+    await api('/auth/login', { method: 'POST', body: json({ username, password }) })
+    await refresh()
+  })
+  return (
+    <AuthCard title="Entrar" subtitle="Use o mesmo usuário e senha do computador da empresa.">
+      <form className="auth-form" onSubmit={submit}>
+        <Field
+          label="Usuário"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          autoComplete="username"
+          placeholder="nome.sobrenome"
+          autoFocus
+        />
+        <Field
+          label="Senha"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+        />
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        <Submit busy={busy}>Entrar</Submit>
+      </form>
+      <p className="auth-hint">Sem acesso? Peça à TI para incluir você no grupo QuadroOS.</p>
+    </AuthCard>
+  )
+}
+
 /** Used after a temporary password and from the account menu. */
 export function ChangePasswordForm({ onDone }: { onDone: () => void | Promise<void> }) {
   const [current, setCurrent] = useState('')

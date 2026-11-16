@@ -1939,3 +1939,12 @@ dialog.modal::backdrop,
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.sso-note {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--rf-radius);
+  background: var(--rf-accent-soft);
+  color: var(--rf-ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}

@@ -37,6 +37,7 @@ import { createMondayBatch } from './monday-batch.ts'
 import { jsonObject } from '../shared/rich-values.ts'
 import { migrateBoardLabels } from './board-labels.ts'
 import { authMode, registerAuth, type AuthMode } from './auth.ts'
+import type { OidcConfig } from './oidc.ts'
 import { addOwner, registerBoardAccess, scopeWorkspace } from './access.ts'
 import { registerSectors } from './sectors.ts'
 
@@ -82,6 +83,8 @@ export async function buildApp(
     mondayFetch?: MondayFetch
     mondayDownload?: typeof fetch
     auth?: AuthMode
+    oidc?: OidcConfig
+    oidcFetch?: typeof fetch
   } = {},
 ) {
   await migrate(db)
@@ -152,7 +155,10 @@ export async function buildApp(
     app.log.error({ name: error.name, code: error.code }, 'Falha interna')
     return reply.status(500).send({ message: 'Não foi possível concluir. Tente novamente.' })
   })
-  registerAuth(app, db, options.auth ?? authMode())
+  registerAuth(app, db, options.auth ?? authMode(), {
+    oidc: options.oidc,
+    oidcFetch: options.oidcFetch,
+  })
   app.get('/api/health', async () => ({ ok: true, version: '0.1.0', database: db.kind }))
   registerBoardAccess(app, db)
   registerSectors(app, db)

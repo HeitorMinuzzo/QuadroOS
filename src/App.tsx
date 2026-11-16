@@ -844,16 +844,18 @@ export function App() {
               <div>
                 <dt>Ambiente</dt>
                 <dd>
-                  {session.mode === 'local'
-                    ? 'Login com e-mail e senha'
-                    : 'Workspace local · sem login'}
+                  {session.mode === 'oidc'
+                    ? 'Login com a conta da empresa (Keycloak)'
+                    : session.mode === 'local'
+                      ? 'Login com e-mail e senha'
+                      : 'Workspace local · sem login'}
                 </dd>
               </div>
               <div>
                 <dt>Persistência</dt>
                 <dd>{data.database}</dd>
               </div>
-              {(session.mode !== 'local' || session.account?.role === 'admin') && (
+              {(session.mode === 'none' || session.account?.role === 'admin') && (
                 <div>
                   <dt>Setores</dt>
                   <dd>
