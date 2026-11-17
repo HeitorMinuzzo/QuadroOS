@@ -2266,7 +2266,8 @@ test('file columns upload, download and delete files, persist after reload and w
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(375)
   await page.screenshot({ path: 'test-results/files-mobile.png' })
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('dialog', { name: 'Detalhes da tarefa', exact: true })).toBeVisible()
+  // The task panel is named after the task itself.
+  await expect(page.getByRole('dialog', { name: 'Anexar documentos', exact: true })).toBeVisible()
 })
 
 test.describe('modern form controls', () => {

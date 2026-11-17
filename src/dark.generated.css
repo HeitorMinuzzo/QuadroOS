@@ -1717,6 +1717,12 @@
 :where(:root[data-theme='dark']) .column-resize-handle:hover::after, :where(:root[data-theme='dark']) .column-resize-handle:focus-visible::after {
     background: #0073ea
 }
+:where(:root[data-theme='dark']) .task-table > .virtual-rows-spacer > tr > td {
+    border: 0
+}
+:where(:root[data-theme='dark']) .task-table > .virtual-rows-spacer > tr:hover {
+    background: transparent
+}
 :where(:root[data-theme='dark']) .task-name-surface .editable[readonly] {
     border-color: transparent;
     background: transparent
@@ -4131,6 +4137,212 @@
     :where(:root[data-theme='dark']) .modal.task-panel {
         border-radius: 0
     }
+}
+:where(:root[data-theme='dark']) .task-panel-crumbs {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-panel-crumbs > span[aria-hidden='true'] {
+    color: var(--ui-hover-border)
+}
+:where(:root[data-theme='dark']) .task-panel-group > i {
+    border-radius: 3px
+}
+:where(:root[data-theme='dark']) .task-panel-parent {
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--primary-text)
+}
+:where(:root[data-theme='dark']) .task-panel-parent:hover {
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-panel .modal-header .drawer-title {
+    border: 1px solid transparent;
+    border-radius: var(--ui-control-radius);
+    background: transparent;
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-panel .modal-header .task-name-surface:not(.is-editing):hover .drawer-title {
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-panel .modal-header .task-name-surface.is-editing .drawer-title {
+    border-color: var(--ui-focus);
+    box-shadow: var(--ui-focus-shadow);
+    background: var(--ui-surface)
+}
+:where(:root[data-theme='dark']) .task-panel .modal-header .drawer-title:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 0
+}
+:where(:root[data-theme='dark']) .task-section {
+    border-top: 1px solid var(--ui-border)
+}
+:where(:root[data-theme='dark']) .task-section:first-child {
+    border-top: 0
+}
+:where(:root[data-theme='dark']) .task-panel .task-section > h3 {
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-panel .task-section > h3 > svg {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-panel .task-section > h3 > span {
+    border-radius: 5px;
+    background: var(--ui-subtle);
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-panel .drawer-description textarea {
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-panel .drawer-description textarea:read-only {
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-panel .task-properties {
+    border: 0
+}
+:where(:root[data-theme='dark']) .task-panel .task-property > .task-property-label {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-property-label > .column-type-icon {
+    border-radius: 4px
+}
+:where(:root[data-theme='dark']) .task-property-control {
+    border: 1px solid var(--ui-control-border);
+    border-radius: var(--ui-control-radius);
+    background: var(--ui-surface);
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-property-control:hover {
+    border-color: var(--ui-hover-border)
+}
+:where(:root[data-theme='dark']) .task-property-control:focus-within {
+    border-color: var(--ui-focus);
+    box-shadow: var(--ui-focus-shadow)
+}
+:where(:root[data-theme='dark']) .task-property-control:has(> output) {
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-property-control:has(> output):hover {
+    border-color: var(--ui-control-border)
+}
+:where(:root[data-theme='dark']) .task-panel
+  .task-property-control
+  :is(
+    .custom-input, :where(:root[data-theme='dark']) .custom-dropdown-trigger, :where(:root[data-theme='dark']) .assignee-trigger, :where(:root[data-theme='dark']) .date-picker-trigger, :where(:root[data-theme='dark']) .field-select-trigger, :where(:root[data-theme='dark']) .files-cell-trigger, :where(:root[data-theme='dark']) .formula-result, :where(:root[data-theme='dark']) .rich-timeline-trigger, :where(:root[data-theme='dark']) .rich-external-trigger, :where(:root[data-theme='dark']) .rich-last-updated, :where(:root[data-theme='dark']) .rich-timer-cell, :where(:root[data-theme='dark']) .rich-external-cell, :where(:root[data-theme='dark']) .rich-checkbox, :where(:root[data-theme='dark']) .number-with-unit
+  ) {
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-panel .task-property-control .number-with-unit > span {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-panel .task-property-control .rich-external-cell > a {
+    border-radius: 7px
+}
+:where(:root[data-theme='dark']) .task-panel .task-property-control .rich-external-cell > a:hover {
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-panel .task-property-control .rich-timer-cell > button:not(.rich-timer-duration) {
+    border-radius: 6px
+}
+:where(:root[data-theme='dark']) .task-panel .task-property-control .rich-timer-duration {
+    border-radius: 6px;
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-panel .task-property-control .rich-timer-duration:hover {
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-panel .task-property-control :is(.rich-timeline-trigger, :where(:root[data-theme='dark']) .rich-last-updated) > svg {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-panel .task-property-control .custom-input:focus {
+    border: 0;
+    box-shadow: none;
+    outline: none
+}
+:where(:root[data-theme='dark']) .task-panel
+  .task-property-control:not(:has(> .rich-timer-cell, :where(:root[data-theme='dark']) > .rich-external-cell))
+  :focus-visible {
+    outline: none
+}
+:where(:root[data-theme='dark']) .task-panel .task-property.is-choice .monday-choice-trigger {
+    border-radius: 8px
+}
+:where(:root[data-theme='dark']) .task-panel .task-property.is-choice .monday-choice-trigger:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px
+}
+:where(:root[data-theme='dark']) .task-panel .drawer-footer {
+    border-top: 1px solid var(--ui-border)
+}
+:where(:root[data-theme='dark']) .task-panel .drawer-footer .origin-note {
+    border: 0;
+    background: transparent;
+    color: inherit
+}
+:where(:root[data-theme='dark']) .task-update-files > header h3 {
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-file-group > h4 {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-file-group > h4 > span {
+    border-radius: 4px;
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-file-group > ul {
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-menu-radius);
+    background: var(--ui-surface)
+}
+:where(:root[data-theme='dark']) .task-file-group li + li {
+    border-top: 1px solid var(--ui-border)
+}
+:where(:root[data-theme='dark']) .task-file {
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-file:hover {
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-file:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px
+}
+:where(:root[data-theme='dark']) .task-file-thumb {
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-control-radius);
+    background: color-mix(in srgb, var(--primary) 10%, var(--ui-surface));
+    color: var(--primary-text)
+}
+:where(:root[data-theme='dark']) .task-file-text small {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-file-action {
+    border-radius: 8px;
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .task-file:hover .task-file-action {
+    background: var(--ui-surface);
+    color: var(--primary-text)
+}
+:where(:root[data-theme='dark']) .task-files-empty {
+    border: 1px dashed var(--ui-control-border);
+    border-radius: var(--ui-menu-radius);
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .task-files-empty > span {
+    border-radius: var(--ui-control-radius);
+    background: color-mix(in srgb, var(--primary) 10%, var(--ui-surface));
+    color: var(--primary-text)
+}
+:where(:root[data-theme='dark']) .task-files-empty h4 {
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .task-files-empty p {
+    color: var(--ui-muted)
 }
 /*  from refresh.css  */
 :root:where([data-theme='dark']) {

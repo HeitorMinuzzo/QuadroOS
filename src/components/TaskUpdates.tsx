@@ -8,6 +8,8 @@ import {
   Paperclip,
   Download,
   FileText,
+  Link2,
+  ExternalLink,
 } from 'lucide-react'
 import type { Comment, FileAttachment, Task, Workspace } from '../../shared/domain'
 import { useReadOnly } from '../lib/readonly'
@@ -365,25 +367,114 @@ export function TaskUpdates({
     </section>
   )
 }
+function fileSize(size: number) {
+  if (size < 1024) return `${size} B`
+  if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`
+  return `${(size / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`
+}
+function FileRow({ file }: { file: FileAttachment }) {
+  const image = !file.externalUrl && /\.(png|jpe?g|gif|webp)$/i.test(file.name)
+  const extension = file.name.includes('.') ? file.name.split('.').pop()!.slice(0, 4) : ''
+  return (
+    <li>
+      <a
+        className="task-file"
+        href={`/api/files/${file.id}`}
+        download={file.externalUrl ? undefined : file.name}
+        target={file.externalUrl ? '_blank' : undefined}
+        rel="noreferrer"
+      >
+        <span className="task-file-thumb" aria-hidden="true">
+          {image ? (
+            <img src={`/api/files/${file.id}/preview`} alt="" loading="lazy" />
+          ) : file.externalUrl ? (
+            <Link2 size={18} />
+          ) : (
+            <>
+              <FileText size={18} />
+              {extension && <small>{extension}</small>}
+            </>
+          )}
+        </span>
+        <span className="task-file-text">
+          <strong>{file.name}</strong>
+          <small>
+            {file.externalUrl ? 'Link externo' : fileSize(file.size)}
+            {' · '}
+            {new Date(file.createdAt).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </small>
+        </span>
+        <span className="task-file-action" aria-hidden="true">
+          {file.externalUrl ? <ExternalLink size={15} /> : <Download size={15} />}
+        </span>
+      </a>
+    </li>
+  )
+}
 export function TaskFiles({ task, data }: { task: Task; data: Workspace }) {
   const files = (data.attachments || []).filter((file) => file.taskId === task.id)
+  const board = data.boards.find((b) => b.id === task.boardId)
+  // Files from the board's file fields come first, one list per field; files that arrived
+  // with an update close the tab.
+  const sections: { key: string; title: string; files: FileAttachment[] }[] = []
+  for (const file of files) {
+    const key = file.commentId ? 'updates' : file.columnId || 'other'
+    let section = sections.find((entry) => entry.key === key)
+    if (!section) {
+      const column = board?.columns.find((entry) => entry.id === file.columnId)
+      section = {
+        key,
+        title: file.commentId ? 'Nas atualizações' : column ? column.name : 'Outros arquivos',
+        files: [],
+      }
+      sections.push(section)
+    }
+    section.files.push(file)
+  }
+  sections.sort((a, b) => Number(a.key === 'updates') - Number(b.key === 'updates'))
   return (
     <section className="task-updates task-update-files" aria-label="Arquivos do item">
       <header>
-        <h3>Arquivos deste item</h3>
+        <h3>Arquivos</h3>
         <span>
           {files.length} {files.length === 1 ? 'arquivo' : 'arquivos'}
         </span>
       </header>
       {files.length ? (
-        <UpdateAttachments files={files} />
+        sections.map((section) => (
+          <div className="task-file-group" key={section.key}>
+            <h4>
+              {section.key === 'updates' ? (
+                <MessageSquare size={13} aria-hidden="true" />
+              ) : (
+                <Paperclip size={13} aria-hidden="true" />
+              )}
+              {section.title}
+              <span>{section.files.length}</span>
+            </h4>
+            <ul>
+              {section.files.map((file) => (
+                <FileRow key={file.id} file={file} />
+              ))}
+            </ul>
+          </div>
+        ))
       ) : (
-        <div className="updates-empty">
-          <span>
-            <Paperclip size={27} />
+        <div className="task-files-empty">
+          <span aria-hidden="true">
+            <Paperclip size={20} />
           </span>
-          <h4>Nenhum arquivo por aqui</h4>
-          <p>Os anexos das colunas e das conversas aparecem juntos nesta aba.</p>
+          <div>
+            <h4>Nenhum arquivo neste item</h4>
+            <p>
+              Os arquivos enviados nos campos de arquivo (aba Detalhes) e os anexos das atualizações
+              aparecem aqui.
+            </p>
+          </div>
         </div>
       )}
     </section>

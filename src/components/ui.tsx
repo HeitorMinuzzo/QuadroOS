@@ -45,13 +45,16 @@ export function IconButton({
 }
 export function Modal({
   title,
+  heading,
   subtitle,
   children,
   onClose,
   className = '',
 }: {
   title: string
-  subtitle?: string
+  /** Visible content of the title (e.g. an editable field); `title` stays its accessible name. */
+  heading?: ReactNode
+  subtitle?: ReactNode
   children: ReactNode
   onClose: () => void
   className?: string
@@ -93,7 +96,13 @@ export function Modal({
       <div className="modal-inner">
         <header className="modal-header">
           <div>
-            <h2 id={titleId}>{title}</h2>
+            {heading ? (
+              <h2 id={titleId} aria-label={title}>
+                {heading}
+              </h2>
+            ) : (
+              <h2 id={titleId}>{title}</h2>
+            )}
             {subtitle && <p id={descriptionId}>{subtitle}</p>}
           </div>
           <IconButton label="Fechar janela" onClick={onClose}>

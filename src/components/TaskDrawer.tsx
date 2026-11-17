@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { FieldSelect } from './FieldSelect'
 import {
   CalendarDays,
@@ -10,6 +10,7 @@ import {
   AlignLeft,
   ExternalLink,
   Layers3,
+  CornerDownRight,
 } from 'lucide-react'
 import {
   type Task,
@@ -65,6 +66,8 @@ export function TaskDrawer({
   const updateCount = taskUpdateCount(data.comments, task.id)
   const fileCount = (data.attachments || []).filter((file) => file.taskId === task.id).length
   const board = data.boards.find((b) => b.id === task.boardId)
+  const group = data.groups.find((g) => g.id === task.groupId)
+  const parent = task.parentId ? data.tasks.find((t) => t.id === task.parentId) : undefined
   const statusOptions =
     (task.parentId ? board?.settings?.subitemStatusOptions : undefined) ||
     board?.settings?.statusOptions ||
@@ -73,20 +76,57 @@ export function TaskDrawer({
     (task.parentId ? board?.settings?.subitemPriorityOptions : undefined) ||
     board?.settings?.priorityOptions ||
     DEFAULT_PRIORITY_OPTIONS
+  const customColumns = (board?.columns || []).filter((column) =>
+    task.parentId && board?.settings?.subitemColumns
+      ? board.settings.subitemColumns.includes(column.id)
+      : column.source?.scope !== 'subitems',
+  )
   // Boards the person may only read keep the panel visible but not editable.
   const readOnly = board?.access?.canEdit === false
 
   return (
     <ReadOnlyContext.Provider value={readOnly}>
       <Modal
-        title={
-          tab === 'details'
-            ? task.parentId
-              ? 'Detalhes do subitem'
-              : 'Detalhes da tarefa'
-            : task.title
+        title={task.title}
+        heading={
+          <EditableText
+            activation="doubleClick"
+            readOnly={readOnly}
+            value={task.title}
+            label="Título da tarefa"
+            className="drawer-title"
+            onSave={(title) => void onPatch(task.id, { title })}
+          />
         }
-        subtitle={board?.name}
+        subtitle={
+          <span className="task-panel-crumbs">
+            <span>{board?.name}</span>
+            {parent ? (
+              <>
+                <span aria-hidden="true">/</span>
+                <button
+                  type="button"
+                  className="task-panel-parent"
+                  title="Abrir a tarefa principal"
+                  onClick={() => onOpenTask(parent.id)}
+                >
+                  <CornerDownRight size={13} aria-hidden="true" />
+                  {parent.title}
+                </button>
+              </>
+            ) : (
+              group && (
+                <>
+                  <span aria-hidden="true">/</span>
+                  <span className="task-panel-group">
+                    <i style={{ background: group.color }} aria-hidden="true" />
+                    {group.name}
+                  </span>
+                </>
+              )
+            )}
+          </span>
+        }
         className="drawer-modal task-panel"
         onClose={onClose}
       >
@@ -112,130 +152,113 @@ export function TaskDrawer({
           </TabsContent>
           <TabsContent value="details">
             <div className="task-drawer">
-              <span className="drawer-eyebrow">
-                {task.parentId ? 'DETALHES DO SUBITEM' : 'DETALHES DA TAREFA'}
-              </span>
-              {task.parentId && (
-                <button className="text-button" onClick={() => onOpenTask(task.parentId!)}>
-                  ↳ {data.tasks.find((t) => t.id === task.parentId)?.title}
-                </button>
-              )}
-              <EditableText
-                activation="doubleClick"
-                readOnly={readOnly}
-                value={task.title}
-                label="Título da tarefa"
-                className="drawer-title"
-                onSave={(title) => void onPatch(task.id, { title })}
-              />
-              <div className="task-properties" inert={readOnly}>
-                <div>
-                  <span>
-                    <Circle size={16} />
-                    Status
-                  </span>
-                  <PillSelect
-                    value={task.status}
-                    kind="status"
-                    allowClear={!!board?.settings?.monday}
-                    placeholder={board?.settings?.monday ? 'Selecionar…' : undefined}
-                    customOptions={statusOptions}
-                    className={statusClass(task.status)}
-                    label="Status da tarefa"
-                    onChange={(status) => void onPatch(task.id, { status: status as Status })}
-                  />
+              <section className="task-section drawer-description">
+                <h3>
+                  <AlignLeft size={15} aria-hidden="true" />
+                  Descrição
+                </h3>
+                <EditableText
+                  readOnly={readOnly}
+                  value={task.description}
+                  multiline
+                  label="Descrição da tarefa"
+                  placeholder={
+                    readOnly
+                      ? 'Sem descrição.'
+                      : 'Descreva a entrega, adicione contexto ou liste os próximos passos…'
+                  }
+                  onSave={(description) => void onPatch(task.id, { description })}
+                />
+              </section>
+              <section className="task-section">
+                <h3>Propriedades</h3>
+                <div className="task-properties" inert={readOnly}>
+                  <Property icon={<Circle size={14} />} label="Status" choice>
+                    <PillSelect
+                      value={task.status}
+                      kind="status"
+                      allowClear={!!board?.settings?.monday}
+                      placeholder={board?.settings?.monday ? 'Selecionar…' : undefined}
+                      customOptions={statusOptions}
+                      className={statusClass(task.status)}
+                      label="Status da tarefa"
+                      onChange={(status) => void onPatch(task.id, { status: status as Status })}
+                    />
+                  </Property>
+                  <Property icon={<Flag size={14} />} label="Prioridade" choice>
+                    <PillSelect
+                      value={task.priority}
+                      kind="priority"
+                      allowClear={!!board?.settings?.monday}
+                      placeholder={board?.settings?.monday ? 'Selecionar…' : undefined}
+                      customOptions={priorityOptions}
+                      className={`priority ${priorityClass(task.priority)}`}
+                      label="Prioridade da tarefa"
+                      onChange={(priority) =>
+                        void onPatch(task.id, { priority: priority as Priority })
+                      }
+                    />
+                  </Property>
+                  <Property icon={<UserRound size={14} />} label="Responsável">
+                    <AssigneePicker
+                      people={data.people}
+                      value={taskOwnerIds(task)}
+                      label="Responsável da tarefa"
+                      onChange={(ownerIds) => onPatch(task.id, { ownerIds })}
+                    />
+                  </Property>
+                  <Property icon={<CalendarDays size={14} />} label="Prazo">
+                    <DatePicker
+                      value={task.dueAt ? localDate(new Date(task.dueAt)) : task.dueDate}
+                      dateTime={task.dueAt}
+                      onChangeDateTime={(dueDate, dueAt) => onPatch(task.id, { dueDate, dueAt })}
+                      label="Prazo da tarefa"
+                      overdue={isOverdue(task, board)}
+                      onChange={(dueDate) => onPatch(task.id, { dueDate })}
+                    />
+                  </Property>
+                  <Property icon={<Layers3 size={14} />} label="Grupo">
+                    <FieldSelect
+                      label="Grupo da tarefa"
+                      value={task.groupId}
+                      disabled={!!task.parentId}
+                      onChange={(groupId) => void onPatch(task.id, { groupId })}
+                      heading="Grupos do quadro"
+                      options={data.groups
+                        .filter((g) => g.boardId === task.boardId)
+                        .map((g) => ({ value: g.id, label: g.name, color: g.color }))}
+                    />
+                  </Property>
                 </div>
-                <div>
-                  <span>
-                    <Flag size={16} />
-                    Prioridade
-                  </span>
-                  <PillSelect
-                    value={task.priority}
-                    kind="priority"
-                    allowClear={!!board?.settings?.monday}
-                    placeholder={board?.settings?.monday ? 'Selecionar…' : undefined}
-                    customOptions={priorityOptions}
-                    className={`priority ${priorityClass(task.priority)}`}
-                    label="Prioridade da tarefa"
-                    onChange={(priority) =>
-                      void onPatch(task.id, { priority: priority as Priority })
-                    }
-                  />
-                </div>
-                <div>
-                  <span>
-                    <UserRound size={16} />
-                    Responsável
-                  </span>
-                  <AssigneePicker
-                    people={data.people}
-                    value={taskOwnerIds(task)}
-                    label="Responsável da tarefa"
-                    onChange={(ownerIds) => onPatch(task.id, { ownerIds })}
-                  />
-                </div>
-                <div>
-                  <span>
-                    <CalendarDays size={16} />
-                    Prazo
-                  </span>
-                  <DatePicker
-                    value={task.dueAt ? localDate(new Date(task.dueAt)) : task.dueDate}
-                    dateTime={task.dueAt}
-                    onChangeDateTime={(dueDate, dueAt) => onPatch(task.id, { dueDate, dueAt })}
-                    label="Prazo da tarefa"
-                    overdue={isOverdue(task, board)}
-                    onChange={(dueDate) => onPatch(task.id, { dueDate })}
-                  />
-                </div>
-                <div>
-                  <span>
-                    <Layers3 size={16} />
-                    Grupo
-                  </span>
-                  <FieldSelect
-                    label="Grupo da tarefa"
-                    value={task.groupId}
-                    disabled={!!task.parentId}
-                    onChange={(groupId) => void onPatch(task.id, { groupId })}
-                    heading="Grupos do quadro"
-                    options={data.groups
-                      .filter((g) => g.boardId === task.boardId)
-                      .map((g) => ({ value: g.id, label: g.name, color: g.color }))}
-                  />
-                </div>
-              </div>
-              {!!board?.columns.length && (
-                <section className="drawer-custom-columns">
-                  <h3>Colunas do quadro</h3>
+              </section>
+              {board && customColumns.length > 0 && (
+                <section className="task-section drawer-custom-columns">
+                  <h3>
+                    Campos do quadro <span>{customColumns.length}</span>
+                  </h3>
                   <div className="task-properties" inert={readOnly}>
-                    {board.columns
-                      .filter((column) =>
-                        task.parentId && board.settings?.subitemColumns
-                          ? board.settings.subitemColumns.includes(column.id)
-                          : column.source?.scope !== 'subitems',
-                      )
-                      .map((column) => (
-                        <div key={column.id}>
-                          <span>
-                            <ColumnTypeIcon type={column.type} />
-                            {column.name}
-                          </span>
-                          <TaskCustomCell
-                            workspace={data}
-                            onOpenTask={onOpenTask}
-                            board={board}
-                            attachments={data.attachments}
-                            onRefresh={onRefresh}
-                            task={task}
-                            column={column}
-                            people={data.people}
-                            onPatch={onPatch}
-                            onEditColumn={() => setEditingColumn(column)}
-                          />
-                        </div>
-                      ))}
+                    {customColumns.map((column) => (
+                      <Property
+                        key={column.id}
+                        icon={<ColumnTypeIcon type={column.type} />}
+                        label={column.name}
+                        type={column.type}
+                        choice={column.type === 'status'}
+                      >
+                        <TaskCustomCell
+                          workspace={data}
+                          onOpenTask={onOpenTask}
+                          board={board}
+                          attachments={data.attachments}
+                          onRefresh={onRefresh}
+                          task={task}
+                          column={column}
+                          people={data.people}
+                          onPatch={onPatch}
+                          onEditColumn={() => setEditingColumn(column)}
+                        />
+                      </Property>
+                    ))}
                   </div>
                 </section>
               )}
@@ -247,21 +270,8 @@ export function TaskDrawer({
                   onClose={() => setEditingColumn(null)}
                 />
               )}
-              <section className="drawer-description">
-                <h3>
-                  <AlignLeft size={17} />
-                  Descrição
-                </h3>
-                <EditableText
-                  readOnly={readOnly}
-                  value={task.description}
-                  multiline
-                  label="Descrição da tarefa"
-                  placeholder="Descreva a entrega, adicione contexto ou liste os próximos passos…"
-                  onSave={(description) => void onPatch(task.id, { description })}
-                />
-              </section>
-              {
+              <section className="task-section task-subitems-section">
+                <h3>Subitens</h3>
                 <SubitemsPanel
                   parent={task}
                   data={data}
@@ -273,31 +283,33 @@ export function TaskDrawer({
                   onOpenTask={onOpenTask}
                   onDelete={onDelete}
                 />
-              }
-              {task.source && (
-                <div className="origin-note">
-                  <ExternalLink size={14} />
-                  Importada de {task.source.startsWith('monday') ? 'monday.com' : 'arquivo'}
-                  {task.externalId && task.source.startsWith('monday') && (
-                    <span>· ID {task.externalId}</span>
-                  )}
-                </div>
-              )}
+              </section>
               <footer className="drawer-footer">
                 <span>
-                  <Clock3 size={13} />
-                  Atualizada em{' '}
-                  {new Date(task.updatedAt).toLocaleString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  <span>
+                    <Clock3 size={13} aria-hidden="true" />
+                    Atualizada em{' '}
+                    {new Date(task.updatedAt).toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                  {task.source && (
+                    <span className="origin-note">
+                      <ExternalLink size={13} aria-hidden="true" />
+                      Importada de {task.source.startsWith('monday') ? 'monday.com' : 'arquivo'}
+                      {task.externalId && task.source.startsWith('monday') && (
+                        <> · ID {task.externalId}</>
+                      )}
+                    </span>
+                  )}
                 </span>
                 {!readOnly && (
                   <button className="text-button danger" onClick={() => onDelete([task.id])}>
-                    <Trash2 size={14} />
-                    Excluir tarefa
+                    <Trash2 size={14} aria-hidden="true" />
+                    {task.parentId ? 'Excluir subitem' : 'Excluir tarefa'}
                   </button>
                 )}
               </footer>
@@ -306,5 +318,43 @@ export function TaskDrawer({
         </Tabs>
       </Modal>
     </ReadOnlyContext.Provider>
+  )
+}
+
+/** One field of the details grid: label above, value inside a 40 px field shell. */
+function Property({
+  icon,
+  label,
+  type,
+  choice = false,
+  children,
+}: {
+  icon: ReactNode
+  label: string
+  type?: string
+  /** Status-like pickers sit as a pill inside the shell; a click on the shell opens them. */
+  choice?: boolean
+  children: ReactNode
+}) {
+  return (
+    <div className={`task-property${choice ? ' is-choice' : ''}`} data-type={type}>
+      <span className="task-property-label">
+        {icon}
+        {label}
+      </span>
+      <div
+        className="task-property-control"
+        onClick={
+          choice
+            ? (event) => {
+                if (event.target !== event.currentTarget) return
+                event.currentTarget.querySelector<HTMLElement>('button')?.click()
+              }
+            : undefined
+        }
+      >
+        {children}
+      </div>
+    </div>
   )
 }
