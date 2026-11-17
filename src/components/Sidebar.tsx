@@ -56,7 +56,7 @@ interface BoardFolder {
 }
 
 const RECENT_KEY = 'quadroos:recent-boards'
-function readRecent(): string[] {
+export function readRecent(): string[] {
   try {
     const value = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
     return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : []

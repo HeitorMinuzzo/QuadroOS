@@ -4563,92 +4563,140 @@
     background: linear-gradient(145deg, #282634, #312e42);
     color: #a19eff
 }
-:where(:root[data-theme='dark']) .stat-icon.red {
-    color: #fc7b92;
-    background: #261f20
+:where(:root[data-theme='dark']) .home-summary {
+    color: var(--rf-muted)
 }
-:where(:root[data-theme='dark']) .workspace-count {
-    border-radius: 999px;
-    background: #25262e;
-    color: #a8b2d4
-}
-:where(:root[data-theme='dark']) .workspace-board {
-    border: 1px solid var(--rf-line);
-    border-radius: 12px;
-    background: #171920;
+:where(:root[data-theme='dark']) .home-summary strong {
     color: var(--rf-ink)
 }
-:where(:root[data-theme='dark']) .workspace-board::before {
-    background: var(--board-color)
-}
-:where(:root[data-theme='dark']) .workspace-board:hover {
-    border-color: var(--rf-line-strong);
-    box-shadow: 0 8px 20px -12px #1a223840
-}
-:where(:root[data-theme='dark']) .workspace-board:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px
-}
-:where(:root[data-theme='dark']) .workspace-board-icon {
-    border-radius: 9px;
-    background: color-mix(in srgb, var(--board-color) 14%, #171920);
-    color: color-mix(in srgb, var(--board-color) 75%, #d1d6ef)
-}
-:where(:root[data-theme='dark']) .workspace-board-favorite {
-    color: #ac811b;
-    fill: #fff1bf
-}
-:where(:root[data-theme='dark']) .workspace-board-meta {
-    color: var(--rf-muted)
-}
-:where(:root[data-theme='dark']) .workspace-board-meta em {
+:where(:root[data-theme='dark']) .home-summary-late {
+    border: 0;
+    border-radius: 999px;
+    background: #261f20;
     color: #fc7b92
 }
-:where(:root[data-theme='dark']) .workspace-board-progress .board-completion-track > i {
-    background: var(--board-color)
+:where(:root[data-theme='dark']) .home-summary-late strong {
+    color: inherit
 }
-:where(:root[data-theme='dark']) .workspace-board-progress small {
+:where(:root[data-theme='dark']) .home-summary-late:hover {
+    background: #312427
+}
+:where(:root[data-theme='dark']) .home-summary-late.clear {
+    background: #1d2420;
+    color: #77c29a
+}
+:where(:root[data-theme='dark']) .home-card {
+    border: 1px solid var(--rf-line);
+    border-radius: var(--rf-radius-lg);
+    background: var(--ui-surface, #171920);
+    box-shadow: var(--rf-shadow-card)
+}
+:where(:root[data-theme='dark']) .home-card-heading h2 {
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .home-attention-icon {
+    color: #fc7b92
+}
+:where(:root[data-theme='dark']) .home-card-note {
     color: var(--rf-muted)
 }
-:where(:root[data-theme='dark']) .workspace-board-new {
-    border-style: dashed;
+:where(:root[data-theme='dark']) .home-group h3 {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .home-group h3 span {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .home-task, :where(:root[data-theme='dark']) .home-board {
+    border: 0;
+    border-radius: var(--rf-radius-sm);
+    background: transparent;
+    color: inherit
+}
+:where(:root[data-theme='dark']) .home-task:hover, :where(:root[data-theme='dark']) .home-board:hover {
+    background: var(--rf-hover)
+}
+:where(:root[data-theme='dark']) .home-task:focus-visible, :where(:root[data-theme='dark']) .home-board:focus-visible {
+    outline: 2px solid var(--ui-focus);
+    outline-offset: -2px
+}
+:where(:root[data-theme='dark']) .home-task-dot {
+    border-radius: 50%
+}
+:where(:root[data-theme='dark']) .home-task-copy strong, :where(:root[data-theme='dark']) .home-board-copy strong {
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .home-task-copy small, :where(:root[data-theme='dark']) .home-board-copy small {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .home-task-date {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .home-task-date.overdue {
+    color: #fc7b92
+}
+:where(:root[data-theme='dark']) .home-more {
+    border: 0;
+    background: none;
+    color: var(--rf-accent-ink)
+}
+:where(:root[data-theme='dark']) .home-empty {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .home-empty svg {
+    color: #8f98ad
+}
+:where(:root[data-theme='dark']) .home-tabs {
+    border-radius: 9px;
+    background: var(--rf-press)
+}
+:where(:root[data-theme='dark']) .home-tabs button {
+    border: 0;
+    border-radius: 7px;
     background: transparent;
     color: var(--rf-muted)
 }
-:where(:root[data-theme='dark']) .workspace-board-new:hover {
-    background: var(--rf-hover);
-    color: var(--rf-ink)
+:where(:root[data-theme='dark']) .home-tabs button span {
+    color: var(--rf-muted)
 }
-:where(:root[data-theme='dark']) .workspace-task {
-    border-radius: 9px
+:where(:root[data-theme='dark']) .home-tabs button.active {
+    background: var(--ui-surface, #171920);
+    color: var(--rf-ink);
+    box-shadow: 0 1px 2px #1a22381a
 }
-:where(:root[data-theme='dark']) .workspace-task:hover {
+:where(:root[data-theme='dark']) .home-search {
+    border: 1px solid var(--rf-line-strong);
+    border-radius: var(--rf-radius-sm);
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .home-search input {
+    border: 0;
+    background: transparent;
+    color: var(--rf-ink);
+    outline: none
+}
+:where(:root[data-theme='dark']) .home-search:focus-within {
+    border-color: var(--ui-focus);
+    box-shadow: var(--ui-focus-shadow)
+}
+:where(:root[data-theme='dark']) .home-board-icon {
+    border-radius: 8px;
     background: var(--rf-hover)
 }
-:where(:root[data-theme='dark']) .workspace-task:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: -2px
-}
-:where(:root[data-theme='dark']) .workspace-task-board {
-    border-radius: 4px
-}
-:where(:root[data-theme='dark']) .workspace-task-copy strong {
-    color: var(--rf-ink)
-}
-:where(:root[data-theme='dark']) .workspace-task-copy small {
+:where(:root[data-theme='dark']) .home-board-meta {
     color: var(--rf-muted)
 }
-:where(:root[data-theme='dark']) .monday-badge.workspace-task-status {
-    border-radius: 7px
-}
-:where(:root[data-theme='dark']) .workspace-task-date {
-    color: var(--rf-muted)
-}
-:where(:root[data-theme='dark']) .workspace-task-date.overdue {
+:where(:root[data-theme='dark']) .home-board-meta em {
+    border-radius: 999px;
+    background: #261f20;
     color: #fc7b92
 }
-:where(:root[data-theme='dark']) .workspace-more {
+:where(:root[data-theme='dark']) .home-new-board {
+    border: 0;
+    background: none;
     color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .home-new-board:hover {
+    color: var(--rf-ink)
 }
 :where(:root[data-theme='dark']) .my-work-mark {
     border-radius: 9px;

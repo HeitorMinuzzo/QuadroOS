@@ -597,6 +597,8 @@ export function App() {
               onOpenTask={openTask}
               onCreateBoard={() => setModal('board')}
               onImport={() => setModal('import')}
+              onOpenMine={() => navigatePage('mine')}
+              onOpenOverdue={() => setModal('notifications')}
             />
           ) : board ? (
             <BoardView
