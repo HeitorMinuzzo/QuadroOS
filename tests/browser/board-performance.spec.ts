@@ -3,10 +3,10 @@ import type { Board, Task, Comment, Workspace } from '../../shared/domain'
 // DOM snapshots from tracing distort timings on large tables; this scenario measures actual interaction.
 test.use({ trace: 'off' })
 
-test('large board stays responsive when searching, selecting and opening updates without changing saved data', async ({
+test('board with 2,500 tasks opens, scrolls and stays responsive when searching, selecting and opening updates', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90_000)
+  test.setTimeout(120_000)
   const base: Workspace = await (await page.request.get('/api/workspace')).json(),
     now = '2026-01-10T12:00:00.000Z'
   const board: Board = {
@@ -24,20 +24,21 @@ test('large board stays responsive when searching, selecting and opening updates
       { id: 'timer', name: 'Horas', type: 'time_tracking' },
     ],
   }
-  const group = {
+  // Similar to the largest real board: about 2,500 items in 10 groups.
+  const groups = Array.from({ length: 10 }, (_, index) => ({
     ...base.groups[0],
-    id: 'performance-group',
+    id: `performance-group-${index}`,
     boardId: board.id,
-    name: 'Demandas',
-    position: 0,
-  }
-  const tasks: Task[] = Array.from({ length: 208 }, (_, index) => ({
+    name: `Demandas ${index + 1}`,
+    position: index,
+  }))
+  const tasks: Task[] = Array.from({ length: 2500 }, (_, index) => ({
     id: `performance-${index}`,
     boardId: board.id,
-    groupId: group.id,
+    groupId: groups[index % groups.length].id,
     parentId: null,
     previousGroupId: null,
-    title: `Tarefa de teste ${String(index).padStart(3, '0')}`,
+    title: `Tarefa de teste ${String(index).padStart(4, '0')}`,
     description: 'Dados fictícios para medir o quadro.',
     status: 'Em andamento',
     priority: 'Média',
@@ -47,7 +48,7 @@ test('large board stays responsive when searching, selecting and opening updates
     dueAt: null,
     createdAt: now,
     updatedAt: now,
-    position: index,
+    position: Math.floor(index / groups.length),
     version: 1,
     source: null,
     externalId: null,
@@ -79,7 +80,7 @@ test('large board stays responsive when searching, selecting and opening updates
   const fixture = {
     ...base,
     boards: [board],
-    groups: [group],
+    groups,
     tasks,
     comments,
     attachments: [],
@@ -129,9 +130,35 @@ test('large board stays responsive when searching, selecting and opening updates
   }
   const start = Date.now()
   await page.goto(`/#/board/${board.id}/table`)
-  await expect(page.locator('tr[data-task-id]')).toHaveCount(208)
+  await expect(page.getByLabel(`Título: ${tasks[0].title}`, { exact: true })).toBeVisible()
   await frames()
   measurements.loadMs = Date.now() - start
+  // Only rows near the viewport are in the page; the rest is held by spacers of the same height.
+  const mountedRows = () => page.locator('tr[data-task-id]').count()
+  expect(await mountedRows()).toBeLessThan(300)
+  measurements.scrollMaxFrameMs = await page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        let last = performance.now(),
+          worst = 0,
+          steps = 0
+        const tick = () => {
+          const now = performance.now()
+          if (steps) worst = Math.max(worst, now - last)
+          last = now
+          window.scrollBy(0, 300)
+          if (++steps < 60) requestAnimationFrame(tick)
+          else resolve(Math.round(worst))
+        }
+        requestAnimationFrame(tick)
+      }),
+  )
+  expect(measurements.scrollMaxFrameMs).toBeLessThan(1000)
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await expect(page.getByLabel(`Título: ${tasks[2499].title}`, { exact: true })).toBeInViewport()
+  expect(await mountedRows()).toBeLessThan(300)
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await expect(page.getByLabel(`Título: ${tasks[0].title}`, { exact: true })).toBeInViewport()
   measurements.searchMs = await measure('input', () => page.locator('#board-search').fill('Tarefa'))
   await expect(page.locator('.table-view')).toHaveAttribute('aria-busy', 'false')
   await frames()
@@ -156,10 +183,10 @@ test('large board stays responsive when searching, selecting and opening updates
   )
   await frames()
   expect(measurements.closeUpdatesMs).toBeLessThan(1500)
-  await expect(page.locator('tr[data-task-id]')).toHaveCount(208)
-  await page.getByLabel('Buscar neste quadro').fill('teste 207')
+  expect(await mountedRows()).toBeLessThan(300)
+  await page.getByLabel('Buscar neste quadro').fill('teste 2499')
   await expect(page.locator('tr[data-task-id]')).toHaveCount(1)
-  await expect(page.getByLabel(`Título: ${tasks[207].title}`, { exact: true })).toBeVisible()
+  await expect(page.getByLabel(`Título: ${tasks[2499].title}`, { exact: true })).toBeVisible()
   await testInfo.attach('board-performance.json', {
     body: JSON.stringify(measurements, null, 2),
     contentType: 'application/json',

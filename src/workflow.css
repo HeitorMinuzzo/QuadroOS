@@ -1157,6 +1157,14 @@ body.resizing-columns * {
 .sortable-task.is-dragging {
   opacity: 0.25;
 }
+/* Space held by rows of large boards that are scrolled out of view. */
+.task-table > .virtual-rows-spacer > tr > td {
+  padding: 0;
+  border: 0;
+}
+.task-table > .virtual-rows-spacer > tr:hover {
+  background: transparent;
+}
 .sortable-task-name {
   flex: 1;
   min-width: 0;

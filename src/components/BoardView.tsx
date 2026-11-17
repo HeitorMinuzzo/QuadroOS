@@ -67,6 +67,7 @@ import {
   DropdownMenuItem,
 } from './ui/dropdown-menu'
 import { BoardTaskRow } from './BoardTaskRow'
+import { WindowedRows, WINDOWED_FROM } from './WindowedRows'
 import { ShareDialog } from './ShareDialog'
 import { ReadOnlyContext } from '../lib/readonly'
 import { EditGroupDialog } from './EditGroupDialog'
@@ -419,6 +420,9 @@ function BoardViewContent({
     [columnOrder.keys, visibleColumn, allColumns],
   )
   const layoutKeys = ['title', ...orderedColumns.map((c) => c.key)]
+  // Large boards keep only the rows near the viewport in the page (see WindowedRows).
+  const windowed = tasks.length > WINDOWED_FROM
+  const rowColSpan = compactTable ? 3 + Number(visibleColumn('status')) : orderedColumns.length + 3
   const columnClass = (key: string) =>
     columns.some((c) => c.key === key) ? `${key}-cell` : 'custom-cell'
   const columnIcons: Record<string, typeof Users> = {
@@ -1314,37 +1318,43 @@ function BoardViewContent({
                                     </th>
                                   </tr>
                                 </thead>
-                                {orderedTasks.slice(0, rowLimit).map((task) => (
-                                  <BoardTaskRow
-                                    key={task.id}
-                                    task={task}
-                                    board={board}
-                                    data={expanded.includes(task.id) ? data : undefined}
-                                    selected={selected.includes(task.id)}
-                                    expanded={expanded.includes(task.id)}
-                                    revealIds={expanded.includes(task.id) ? expanded : undefined}
-                                    childCount={subitemCounts.get(task.id) || 0}
-                                    updateCount={updateCounts.get(task.id) || 0}
-                                    attachmentKey={attachmentKeys.get(task.id)}
-                                    subitemsColSpan={
-                                      compactTable
-                                        ? 3 + Number(visibleColumn('status'))
-                                        : orderedColumns.length + 3
-                                    }
-                                    orderedColumns={orderedColumns}
-                                    statusOptions={statusOptions}
-                                    priorityOptions={priorityOptions}
-                                    renderField={field}
-                                    onToggleSelected={toggleTaskSelection}
-                                    onToggleExpanded={toggleExpanded}
-                                    onOpenEditLabels={setEditingLabels}
-                                    onPatch={onPatch}
-                                    onMoveTask={onMoveTask}
-                                    onRefresh={onRefresh}
-                                    onOpenTask={onOpenTask}
-                                    onDelete={onDelete}
-                                  />
-                                ))}
+                                <WindowedRows
+                                  items={orderedTasks}
+                                  windowed={windowed}
+                                  limit={rowLimit}
+                                  colSpan={rowColSpan}
+                                  render={(task) => (
+                                    <BoardTaskRow
+                                      key={task.id}
+                                      task={task}
+                                      board={board}
+                                      data={expanded.includes(task.id) ? data : undefined}
+                                      selected={selected.includes(task.id)}
+                                      expanded={expanded.includes(task.id)}
+                                      revealIds={expanded.includes(task.id) ? expanded : undefined}
+                                      childCount={subitemCounts.get(task.id) || 0}
+                                      updateCount={updateCounts.get(task.id) || 0}
+                                      attachmentKey={attachmentKeys.get(task.id)}
+                                      subitemsColSpan={
+                                        compactTable
+                                          ? 3 + Number(visibleColumn('status'))
+                                          : orderedColumns.length + 3
+                                      }
+                                      orderedColumns={orderedColumns}
+                                      statusOptions={statusOptions}
+                                      priorityOptions={priorityOptions}
+                                      renderField={field}
+                                      onToggleSelected={toggleTaskSelection}
+                                      onToggleExpanded={toggleExpanded}
+                                      onOpenEditLabels={setEditingLabels}
+                                      onPatch={onPatch}
+                                      onMoveTask={onMoveTask}
+                                      onRefresh={onRefresh}
+                                      onOpenTask={onOpenTask}
+                                      onDelete={onDelete}
+                                    />
+                                  )}
+                                />
                                 <tfoot className="monday-table-footer">
                                   {groupBy === 'group' && !readOnly && (
                                     <tr className="monday-create-row">

@@ -102,43 +102,15 @@ export function AssigneePicker({
           aria-label="Selecionar responsáveis"
           aria-busy={busy}
         >
-          {people
-            .filter((p) =>
-              `${p.name} ${p.email}`
-                .toLocaleLowerCase('pt-BR')
-                .includes(search.toLocaleLowerCase('pt-BR')),
-            )
-            .map((person) => (
-              <label
-                key={person.id}
-                className="assignee-option"
-                data-checked={selected.includes(person.id)}
-              >
-                <Avatar person={person} small />
-                <span>
-                  {person.name}
-                  <small>{person.email}</small>
-                </span>
-                <input
-                  type="checkbox"
-                  aria-label={person.name}
-                  checked={selected.includes(person.id)}
-                  disabled={busy}
-                  onChange={(e) =>
-                    void change(
-                      e.target.checked
-                        ? [...selected, person.id]
-                        : selected.filter((id) => id !== person.id),
-                    )
-                  }
-                />
-              </label>
-            ))}
-          {!people.some((p) =>
-            `${p.name} ${p.email}`
-              .toLocaleLowerCase('pt-BR')
-              .includes(search.toLocaleLowerCase('pt-BR')),
-          ) && <p className="picker-empty">Nenhuma pessoa encontrada.</p>}
+          <AssigneeOptions
+            people={people}
+            search={search}
+            selected={selected}
+            busy={busy}
+            onToggle={(id, checked) =>
+              void change(checked ? [...selected, id] : selected.filter((entry) => entry !== id))
+            }
+          />
         </div>
         {error && (
           <p className="form-error" role="alert">
@@ -159,5 +131,51 @@ export function AssigneePicker({
         </div>
       </PopoverContent>
     </Popover>
+  )
+}
+
+// Rendered only while the menu is open, so tables with many people cells do not filter the
+// whole team for every cell.
+function AssigneeOptions({
+  people,
+  search,
+  selected,
+  busy,
+  onToggle,
+}: {
+  people: Person[]
+  search: string
+  selected: string[]
+  busy: boolean
+  onToggle: (id: string, checked: boolean) => void
+}) {
+  const query = search.toLocaleLowerCase('pt-BR')
+  const matches = people.filter((p) =>
+    `${p.name} ${p.email}`.toLocaleLowerCase('pt-BR').includes(query),
+  )
+  return (
+    <>
+      {matches.map((person) => (
+        <label
+          key={person.id}
+          className="assignee-option"
+          data-checked={selected.includes(person.id)}
+        >
+          <Avatar person={person} small />
+          <span>
+            {person.name}
+            <small>{person.email}</small>
+          </span>
+          <input
+            type="checkbox"
+            aria-label={person.name}
+            checked={selected.includes(person.id)}
+            disabled={busy}
+            onChange={(e) => onToggle(person.id, e.target.checked)}
+          />
+        </label>
+      ))}
+      {!matches.length && <p className="picker-empty">Nenhuma pessoa encontrada.</p>}
+    </>
   )
 }
