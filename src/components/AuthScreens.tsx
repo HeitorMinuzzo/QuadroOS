@@ -1,5 +1,14 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { LoaderCircle } from 'lucide-react'
+import {
+  CircleAlert,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  LockKeyhole,
+  Mail,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react'
 import { api, json } from '../api'
 import { useSession } from '../lib/session'
 
@@ -7,14 +16,16 @@ function AuthCard({
   title,
   subtitle,
   children,
+  footer,
 }: {
   title: string
   subtitle: string
   children: ReactNode
+  footer?: ReactNode
 }) {
   return (
     <main className="auth-screen">
-      <section className="auth-card" aria-labelledby="auth-title">
+      <div className="auth-column">
         <div className="auth-brand" aria-hidden="true">
           <span className="rail-brand">
             <span />
@@ -26,10 +37,13 @@ function AuthCard({
             quadro<span className="brand-os">OS</span>
           </strong>
         </div>
-        <h1 id="auth-title">{title}</h1>
-        <p className="auth-subtitle">{subtitle}</p>
-        {children}
-      </section>
+        <section className="auth-card" aria-labelledby="auth-title">
+          <h1 id="auth-title">{title}</h1>
+          <p className="auth-subtitle">{subtitle}</p>
+          {children}
+        </section>
+        {footer && <p className="auth-footer">{footer}</p>}
+      </div>
     </main>
   )
 }
@@ -53,13 +67,42 @@ function useSubmit(action: () => Promise<void>) {
 
 function Field({
   label,
+  icon: Icon,
+  type = 'text',
   ...input
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+}: { label: string; icon?: LucideIcon } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const [revealed, setRevealed] = useState(false)
+  const secret = type === 'password'
+  const classes = ['auth-input', Icon && 'has-icon', secret && 'has-reveal'].filter(Boolean)
   return (
     <label className="auth-field">
       <span>{label}</span>
-      <input required {...input} />
+      <span className={classes.join(' ')}>
+        {Icon && <Icon size={17} className="auth-input-icon" aria-hidden="true" />}
+        <input required type={secret && revealed ? 'text' : type} {...input} />
+        {secret && (
+          <button
+            type="button"
+            className="auth-reveal"
+            aria-label={revealed ? 'Ocultar senha' : 'Mostrar senha'}
+            aria-pressed={revealed}
+            onClick={() => setRevealed((value) => !value)}
+          >
+            {revealed ? <EyeOff size={17} /> : <Eye size={17} />}
+          </button>
+        )}
+      </span>
     </label>
+  )
+}
+
+function FormError({ message }: { message: string }) {
+  if (!message) return null
+  return (
+    <p className="auth-error" role="alert">
+      <CircleAlert size={16} aria-hidden="true" />
+      <span>{message}</span>
+    </p>
   )
 }
 
@@ -90,12 +133,14 @@ export function SetupScreen() {
       <form className="auth-form" onSubmit={submit}>
         <Field
           label="Nome"
+          icon={UserRound}
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
         />
         <Field
           label="E-mail"
+          icon={Mail}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -103,6 +148,7 @@ export function SetupScreen() {
         />
         <Field
           label="Senha"
+          icon={LockKeyhole}
           type="password"
           minLength={8}
           value={password}
@@ -110,11 +156,7 @@ export function SetupScreen() {
           autoComplete="new-password"
         />
         <p className="auth-hint">Use pelo menos 8 caracteres.</p>
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
         <Submit busy={busy}>Criar administrador</Submit>
       </form>
     </AuthCard>
@@ -130,31 +172,33 @@ export function LoginScreen() {
     await refresh()
   })
   return (
-    <AuthCard title="Entrar" subtitle="Use o e-mail e a senha da sua conta do QuadroOS.">
+    <AuthCard
+      title="Entrar"
+      subtitle="Use o e-mail e a senha da sua conta do QuadroOS."
+      footer="Esqueceu a senha? Peça a um administrador para redefini-la."
+    >
       <form className="auth-form" onSubmit={submit}>
         <Field
           label="E-mail"
+          icon={Mail}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="username"
+          placeholder="voce@empresa.com.br"
           autoFocus
         />
         <Field
           label="Senha"
+          icon={LockKeyhole}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
         />
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <Submit busy={busy}>Entrar</Submit>
+        <FormError message={error} />
+        <Submit busy={busy}>{busy ? 'Entrando…' : 'Entrar'}</Submit>
       </form>
-      <p className="auth-hint">Esqueceu a senha? Peça a um administrador para redefini-la.</p>
     </AuthCard>
   )
 }
@@ -169,31 +213,38 @@ export function CompanyLoginScreen() {
     await refresh()
   })
   return (
-    <AuthCard title="Entrar" subtitle="Use o mesmo usuário e senha do computador da empresa.">
+    <AuthCard
+      title="Entrar"
+      subtitle="Use o mesmo usuário e senha do computador da empresa."
+      footer={
+        <>
+          Sem acesso? Peça à TI para incluir você no grupo <strong>QuadroOS</strong>.
+        </>
+      }
+    >
       <form className="auth-form" onSubmit={submit}>
         <Field
           label="Usuário"
+          icon={UserRound}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
-          placeholder="nome.sobrenome"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="nome-sobrenome"
           autoFocus
         />
         <Field
           label="Senha"
+          icon={LockKeyhole}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
         />
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <Submit busy={busy}>Entrar</Submit>
+        <FormError message={error} />
+        <Submit busy={busy}>{busy ? 'Entrando…' : 'Entrar'}</Submit>
       </form>
-      <p className="auth-hint">Sem acesso? Peça à TI para incluir você no grupo QuadroOS.</p>
     </AuthCard>
   )
 }
@@ -233,11 +284,7 @@ export function ChangePasswordForm({ onDone }: { onDone: () => void | Promise<vo
         onChange={(e) => setConfirm(e.target.value)}
         autoComplete="new-password"
       />
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
+      <FormError message={error} />
       <Submit busy={busy}>Salvar nova senha</Submit>
     </form>
   )

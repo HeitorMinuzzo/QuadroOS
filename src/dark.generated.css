@@ -4862,16 +4862,19 @@
     color: var(--rf-muted)
 }
 :where(:root[data-theme='dark']) .auth-screen {
-    background: var(--rf-app-bg)
-}
-:where(:root[data-theme='dark']) .auth-card {
-    border: 1px solid var(--rf-line);
-    border-radius: 16px;
-    background: #171920;
-    box-shadow: var(--rf-shadow-pop)
+    background: radial-gradient(60% 45% at 50% 0%, #252832 0%, transparent 100%), var(--rf-app-bg)
 }
 :where(:root[data-theme='dark']) .auth-brand {
     color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .auth-brand .rail-brand {
+    border-radius: 12px
+}
+:where(:root[data-theme='dark']) .auth-card {
+    border: 1px solid var(--rf-line);
+    border-radius: 18px;
+    background: #171920;
+    box-shadow: var(--rf-shadow-pop)
 }
 :where(:root[data-theme='dark']) .auth-card h1 {
     color: var(--rf-ink)
@@ -4893,8 +4896,56 @@
     box-shadow: var(--ui-focus-shadow);
     outline: none
 }
+:where(:root[data-theme='dark']) .auth-input input {
+    border-radius: 10px
+}
+:where(:root[data-theme='dark']) .auth-input input::placeholder {
+    color: #8a93a8
+}
+:where(:root[data-theme='dark']) .auth-input input:hover {
+    border-color: #49505f
+}
+:where(:root[data-theme='dark']) .auth-input input:focus {
+    border-color: #0073ea;
+    box-shadow: 0 0 0 3px #0073ea26
+}
+:where(:root[data-theme='dark']) .auth-input-icon {
+    color: #8a93a8
+}
+:where(:root[data-theme='dark']) .auth-input:focus-within .auth-input-icon {
+    color: #5ca3ff
+}
+:where(:root[data-theme='dark']) .auth-reveal {
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .auth-reveal:hover {
+    background: var(--rf-hover);
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .auth-reveal:focus-visible {
+    outline: 2px solid #0073ea;
+    outline-offset: -2px
+}
+:where(:root[data-theme='dark']) .auth-error {
+    border: 1px solid #4f3e43;
+    border-radius: 10px;
+    background: #231d1e;
+    color: #ff8194
+}
 :where(:root[data-theme='dark']) .auth-hint {
     color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .auth-submit {
+    border-radius: 10px
+}
+:where(:root[data-theme='dark']) .auth-footer {
+    color: var(--rf-muted)
+}
+:where(:root[data-theme='dark']) .auth-footer strong {
+    color: var(--rf-ink-soft)
 }
 :where(:root[data-theme='dark']) .account-trigger {
     border: 0;
