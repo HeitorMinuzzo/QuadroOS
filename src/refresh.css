@@ -1517,6 +1517,25 @@ dialog.modal::backdrop,
 .sidebar .favorite-item .board-dot {
   margin: 0 2px 0 0;
 }
+.sidebar-label-toggle {
+  width: 100%;
+  border: 0;
+  border-radius: var(--rf-radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.sidebar-label-toggle:hover {
+  background: var(--rf-nav-hover);
+  color: var(--rf-ink);
+}
+.sidebar-label-toggle:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: -2px;
+}
+.sidebar-label-toggle > .folder-chevron {
+  flex-shrink: 0;
+}
 .root-boards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

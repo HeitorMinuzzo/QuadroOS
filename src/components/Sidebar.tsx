@@ -56,6 +56,8 @@ interface BoardFolder {
 }
 
 const RECENT_KEY = 'quadroos:recent-boards'
+const RECENT_OPEN_KEY = 'quadroos:sidebar-recent-open'
+const LOOSE_PREFIX = 'loose:'
 export function readRecent(): string[] {
   try {
     const value = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
@@ -165,6 +167,23 @@ export function Sidebar({
   const [collapsed, setCollapsed] = useState(false)
   const [search, setSearch] = useState('')
   const [recent, setRecent] = useState(readRecent)
+  // Recents start collapsed; the choice is a per-browser convenience.
+  const [recentOpen, setRecentOpen] = useState(() => {
+    try {
+      return localStorage.getItem(RECENT_OPEN_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  const toggleRecent = () =>
+    setRecentOpen((previous) => {
+      try {
+        localStorage.setItem(RECENT_OPEN_KEY, previous ? '0' : '1')
+      } catch {
+        // Not persisted; the toggle still works for this session.
+      }
+      return !previous
+    })
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
   useEffect(() => {
     if (mobile) setCollapsed(false)
@@ -206,9 +225,21 @@ export function Sidebar({
   }
   // Folders start closed, except the ones leading to the open board; a search opens all.
   const activeBoard = data.boards.find((board) => board.id === activeId)
+  // Boards outside any folder share a "Sem pasta" folder, unless the workspace has no folders.
+  const looseId = `${LOOSE_PREFIX}${current.id}`
+  const looseBranch: BoardFolder | null =
+    root.boards.length && root.children.size
+      ? { folder: { id: looseId, name: 'Sem pasta' }, boards: root.boards, children: new Map() }
+      : null
+  const activeFolders = activeBoard ? boardFolders(activeBoard).map((folder) => folder.id) : []
   const activePath = new Set(
-    activeBoard ? boardFolders(activeBoard).map((folder) => folder.id) : [],
+    activeBoard && !activeFolders.length ? [...activeFolders, looseId] : activeFolders,
   )
+  const folderBranches = sortedChildren(root)
+  if (looseBranch) {
+    const firstArchived = folderBranches.findIndex((branch) => isArchivedFolder(branch.folder))
+    folderBranches.splice(firstArchived < 0 ? folderBranches.length : firstArchived, 0, looseBranch)
+  }
   const isOpen = (id: string) => (query ? true : (toggled[id] ?? activePath.has(id)))
   const toggle = (id: string) => setToggled((previous) => ({ ...previous, [id]: !isOpen(id) }))
 
@@ -418,13 +449,19 @@ export function Sidebar({
             )}
             {!query && recentBoards.length > 0 && (
               <section className="sidebar-section" aria-label="Quadros recentes">
-                <div className="sidebar-label">
+                <button
+                  type="button"
+                  className="sidebar-label sidebar-label-toggle"
+                  aria-expanded={recentOpen}
+                  onClick={toggleRecent}
+                >
                   <span>
                     <History size={13} />
                     Recentes
                   </span>
-                </div>
-                {recentBoards.map((board) => renderBoard(board))}
+                  <ChevronRight size={14} className="folder-chevron" aria-hidden="true" />
+                </button>
+                {recentOpen && recentBoards.map((board) => renderBoard(board))}
               </section>
             )}
             <div className="sidebar-label boards-label">
@@ -433,14 +470,14 @@ export function Sidebar({
                 <Plus size={16} />
               </IconButton>
             </div>
-            {root.boards.length > 0 && (
+            {root.boards.length > 0 && !looseBranch && (
               <nav className="root-boards" aria-label="Quadros">
                 {root.boards.map((board) => renderBoard(board))}
               </nav>
             )}
             {root.children.size > 0 && (
-              <nav aria-label="Pastas importadas do Monday">
-                {sortedChildren(root).map((child) => (
+              <nav aria-label="Pastas de quadros">
+                {folderBranches.map((child) => (
                   <FolderBranch
                     key={child.folder.id}
                     branch={child}

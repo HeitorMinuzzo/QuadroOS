@@ -4846,6 +4846,19 @@
     background: #292022;
     color: #fc7b92
 }
+:where(:root[data-theme='dark']) .sidebar-label-toggle {
+    border: 0;
+    border-radius: var(--rf-radius-sm);
+    background: transparent
+}
+:where(:root[data-theme='dark']) .sidebar-label-toggle:hover {
+    background: var(--rf-nav-hover);
+    color: var(--rf-ink)
+}
+:where(:root[data-theme='dark']) .sidebar-label-toggle:focus-visible {
+    outline: 2px solid var(--ui-focus);
+    outline-offset: -2px
+}
 :where(:root[data-theme='dark']) .folder-item.archived-folder {
     color: var(--rf-muted)
 }

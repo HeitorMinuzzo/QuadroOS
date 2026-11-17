@@ -58,7 +58,8 @@
   .folder-chevron {
     transition: transform 180ms var(--motion-ease);
   }
-  .folder-item[aria-expanded='true'] > .folder-chevron {
+  .folder-item[aria-expanded='true'] > .folder-chevron,
+  .sidebar-label-toggle[aria-expanded='true'] > .folder-chevron {
     transform: rotate(90deg);
   }
   .folder-item[aria-expanded='true'] + .board-nav {
@@ -82,7 +83,8 @@
 }
 
 /* Without the animation the arrow still points the right way. */
-.folder-item[aria-expanded='true'] > .folder-chevron {
+.folder-item[aria-expanded='true'] > .folder-chevron,
+.sidebar-label-toggle[aria-expanded='true'] > .folder-chevron {
   transform: rotate(90deg);
 }
 
