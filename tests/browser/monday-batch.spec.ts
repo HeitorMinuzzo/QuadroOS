@@ -25,7 +25,7 @@ test('imports all accessible Monday boards from one action and reports per-board
   await expect(batch.getByRole('link', { name: 'Baixar relatório' })).toHaveCount(2)
   await expect(batch.getByText('Lote - Falha', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Fechar janela', exact: true }).click()
-  const folders = page.getByRole('navigation', { name: 'Pastas importadas do Monday' })
+  const folders = page.getByRole('navigation', { name: 'Pastas de quadros' })
   // Folders start closed unless they lead to the open board.
   await folders.getByRole('button', { name: 'TI', exact: true }).click()
   await folders.getByRole('button', { name: 'Infraestrutura', exact: true }).click()

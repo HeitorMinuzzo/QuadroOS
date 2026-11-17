@@ -497,8 +497,11 @@ test('mobile: readable layout, working navigation, modal keyboard escape and red
     })),
   ).toEqual([])
   await page.getByRole('button', { name: 'Abrir navegação' }).click()
+  // Boards may sit in a closed folder ("Sem pasta") once other tests import folders;
+  // the board search opens every folder.
+  await page.getByLabel('Buscar quadros', { exact: true }).fill('Produto')
   await page
-    .getByRole('navigation', { name: 'Quadros', exact: true })
+    .getByRole('navigation', { name: /^(Quadros|Pastas de quadros)$/ })
     .getByRole('button', { name: 'Produto & Design' })
     .click()
   await expect(page.getByRole('heading', { name: 'Produto & Design', exact: true })).toBeVisible()

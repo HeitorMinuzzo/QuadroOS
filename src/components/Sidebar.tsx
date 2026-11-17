@@ -23,7 +23,7 @@ import {
   Check,
   History,
 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { type Board, type MondayFolder, type Workspace } from '../../shared/domain'
 import { Avatar, IconButton } from './ui'
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip'
@@ -185,6 +185,17 @@ export function Sidebar({
       return !previous
     })
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
+  // After a reload every folder starts closed, even around the open board; only opening
+  // another board during the visit reveals the folders that lead to it.
+  // The first board counts once the boards have loaded (before that the id is still empty).
+  const firstActiveId = useRef<string | null>(null)
+  const [revealActive, setRevealActive] = useState(false)
+  const loaded = data.boards.length > 0
+  useEffect(() => {
+    if (!loaded) return
+    if (firstActiveId.current === null) firstActiveId.current = activeId
+    else if (activeId !== firstActiveId.current) setRevealActive(true)
+  }, [activeId, loaded])
   useEffect(() => {
     if (mobile) setCollapsed(false)
   }, [mobile])
@@ -223,8 +234,8 @@ export function Sidebar({
     }
     branch.boards.push(board)
   }
-  // Folders start closed, except the ones leading to the open board; a search opens all.
-  const activeBoard = data.boards.find((board) => board.id === activeId)
+  // Folders start closed; a search opens all, and so does opening a board after the first load.
+  const activeBoard = revealActive ? data.boards.find((board) => board.id === activeId) : undefined
   // Boards outside any folder share a "Sem pasta" folder, unless the workspace has no folders.
   const looseId = `${LOOSE_PREFIX}${current.id}`
   const looseBranch: BoardFolder | null =

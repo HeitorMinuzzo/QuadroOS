@@ -34,7 +34,7 @@ test('complete import supports nested subitems, safe formatted conversations, lo
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   const boardId = await importComplete(page)
-  const folders = page.getByRole('navigation', { name: 'Pastas importadas do Monday' })
+  const folders = page.getByRole('navigation', { name: 'Pastas de quadros' })
   const importedBoard = folders.getByRole('button', {
     name: 'Quadro completo de teste',
     exact: true,
