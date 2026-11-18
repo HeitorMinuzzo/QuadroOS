@@ -2478,10 +2478,6 @@
 :where(:root[data-theme='dark']) .group-preview > span {
     color: #a0abc5
 }
-:where(:root[data-theme='dark']) .label-editor [data-slot='dialog-footer'] {
-    border-radius: 0;
-    background: #171920
-}
 :where(:root[data-theme='dark']) [data-slot='dropdown-menu-content'] {
     border: 1px solid #3d4046;
     box-shadow: 0 10px 32px #20243b1f;
@@ -2546,6 +2542,95 @@
     :where(:root[data-theme='dark']) .drawer-modal {
         border-radius: 0
     }
+}
+:where(:root[data-theme='dark']) .label-editor-heading {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .label-editor-list > li {
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-control-radius);
+    background: var(--ui-subtle)
+}
+:where(:root[data-theme='dark']) .label-editor-list > li[data-open] {
+    background: var(--ui-surface);
+    border-color: var(--ui-hover-border)
+}
+:where(:root[data-theme='dark']) .label-swatch {
+    border: 0;
+    border-radius: 8px;
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08)
+}
+:where(:root[data-theme='dark']) .label-swatch:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px
+}
+:where(:root[data-theme='dark']) .label-editor input[type='text'].label-name {
+    box-shadow: inset 4px 0 0 var(--label-color)
+}
+:where(:root[data-theme='dark']) .label-editor input[type='text'].label-name:focus {
+    box-shadow: inset 4px 0 0 var(--label-color),
+    var(--ui-focus-shadow)
+}
+:where(:root[data-theme='dark']) .label-flag {
+    border: 1px solid var(--ui-control-border);
+    border-radius: 8px;
+    background: var(--ui-surface);
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .label-flag:hover {
+    border-color: var(--ui-hover-border)
+}
+:where(:root[data-theme='dark']) .label-flag[aria-pressed='true'] {
+    border-color: #305543;
+    background: #1b241f;
+    color: #73c49a
+}
+:where(:root[data-theme='dark']) .label-flag.is-warning[aria-pressed='true'] {
+    border-color: #564626;
+    background: #241f13;
+    color: #d6a25b
+}
+:where(:root[data-theme='dark']) .label-delete {
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .label-delete:hover:not(:disabled) {
+    background: #292021;
+    color: #fc7986
+}
+:where(:root[data-theme='dark']) .label-palette {
+    border-top: 1px solid var(--ui-border)
+}
+:where(:root[data-theme='dark']) .label-palette-swatches > button {
+    border: 0;
+    border-radius: 7px;
+    color: #fff
+}
+:where(:root[data-theme='dark']) .label-palette-swatches > button[aria-pressed='true'] {
+    outline: 2px solid var(--ui-ink);
+    outline-offset: 2px
+}
+:where(:root[data-theme='dark']) .label-palette-custom {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .label-palette-custom input[type='color'] {
+    border: 1px solid var(--ui-control-border);
+    border-radius: 6px;
+    background: none
+}
+:where(:root[data-theme='dark']) .label-add {
+    border: 1px dashed var(--ui-hover-border);
+    border-radius: var(--ui-control-radius);
+    background: transparent;
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .label-add:hover {
+    border-color: var(--primary);
+    color: var(--primary-text);
+    background: var(--ui-selected)
 }
 /*  from controls.css  */
 :where(:root[data-theme='dark']) .field-select-trigger {
@@ -3984,17 +4069,6 @@
 }
 :where(:root[data-theme='dark']) .imported-comment-body a {
     color: var(--primary-text)
-}
-:where(:root[data-theme='dark']) .label-completion-toggle {
-    border: 1px solid var(--ui-border);
-    border-radius: 6px;
-    background: var(--ui-surface);
-    color: var(--ui-muted)
-}
-:where(:root[data-theme='dark']) .label-completion-toggle[aria-pressed='true'] {
-    background: #1a241f;
-    color: #71c398;
-    border-color: #2f4b3d
 }
 /*  from task-updates.css  */
 :where(:root[data-theme='dark']) .task-panel::backdrop {

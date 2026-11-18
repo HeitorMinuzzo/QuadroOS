@@ -806,27 +806,3 @@
   color: var(--primary);
   text-decoration: underline;
 }
-.label-completion-toggle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-  height: 34px;
-  padding: 0 8px;
-  border: 1px solid var(--ui-border);
-  border-radius: 6px;
-  background: var(--ui-surface);
-  color: var(--ui-muted);
-  font-size: 10px;
-  cursor: pointer;
-}
-.label-completion-toggle[aria-pressed='true'] {
-  background: #e6f8ee;
-  color: #19734c;
-  border-color: #bde9d1;
-}
-@media (max-width: 600px) {
-  .label-completion-toggle span {
-    display: none;
-  }
-}
