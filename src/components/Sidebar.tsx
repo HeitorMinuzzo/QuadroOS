@@ -264,6 +264,12 @@ export function Sidebar({
       className={`nav-item board-nav-item ${className} ${activeId === board.id ? 'selected' : ''}`}
       aria-current={activeId === board.id ? 'page' : undefined}
       onClick={go(() => onBoard(board.id))}
+      // A name cut with "…" shows in full when the pointer rests on it.
+      onPointerEnter={(event) => {
+        const name = event.currentTarget.querySelector<HTMLElement>('.board-nav-title')
+        if (name && name.scrollWidth > name.clientWidth) event.currentTarget.title = board.name
+        else event.currentTarget.removeAttribute('title')
+      }}
     >
       <span className="board-dot" style={{ background: board.color }} />
       <span className="board-nav-title">{board.name}</span>
