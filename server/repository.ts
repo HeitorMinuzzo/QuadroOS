@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { DomainError } from './errors.ts'
 import { validateCustomValues } from './columns.ts'
-import { automationDestination } from './automations.ts'
+import { afterSubitemChanged, evaluateTaskRules, type RuleContext } from './automations.ts'
+import { notify } from './notifications.ts'
 export { DomainError } from './errors.ts'
 import { type Database, camelRow } from './database.ts'
 import {
@@ -20,7 +21,7 @@ import {
 } from '../shared/board-layout.ts'
 
 export const id = () => randomUUID()
-function taskRow(row: Record<string, unknown>): Task {
+export function taskRow(row: Record<string, unknown>): Task {
   const task = camelRow<Task>(row)
   return { ...task, ownerIds: taskOwnerIds(task) }
 }
@@ -211,6 +212,7 @@ export async function updateTask(
   taskId: string,
   version: number,
   changes: Partial<Task>,
+  ctx: RuleContext = {},
 ): Promise<Task> {
   const hint = (
     await db.query<{ board_id: string }>('SELECT board_id FROM tasks WHERE id=$1', [taskId])
@@ -256,8 +258,10 @@ export async function updateTask(
     next.groupId = parent.groupId
     next.previousGroupId = null
   } else {
-    next.groupId = (await automationDestination(db, current, next)) || next.groupId
+    Object.assign(next, await evaluateTaskRules(db, current, next, ctx))
+    next.ownerId = next.ownerIds[0] || null
     next.previousGroupId = null
+    await findGroup(db, current.boardId, next.groupId)
   }
   const now = new Date().toISOString()
   const result = await db.query(
@@ -283,7 +287,40 @@ export async function updateTask(
       'WITH RECURSIVE descendants AS (SELECT id FROM tasks WHERE parent_id=$3 UNION ALL SELECT t.id FROM tasks t JOIN descendants d ON t.parent_id=d.id) UPDATE tasks SET group_id=$1,updated_at=$2,version=version+1 WHERE id IN (SELECT id FROM descendants) AND group_id<>$1',
       [next.groupId, now, taskId],
     )
-  return taskRow(result.rows[0])
+  const saved = taskRow(result.rows[0])
+  await notifyAssigned(db, current, saved, ctx.actorId)
+  if (current.parentId && current.status !== saved.status)
+    await afterSubitemChanged(db, current, saved, ctx)
+  return saved
+}
+
+/** Tells the people newly assigned to a task (except whoever assigned them). */
+export async function notifyAssigned(
+  db: Database,
+  before: Pick<Task, 'ownerIds'> | null,
+  task: Task,
+  actorId?: string | null,
+) {
+  const added = task.ownerIds.filter((id) => !before?.ownerIds.includes(id))
+  if (!added.length) return
+  const actor = actorId
+    ? (await db.query<{ name: string }>('SELECT name FROM people WHERE id=$1', [actorId])).rows[0]
+        ?.name
+    : null
+  const board = (
+    await db.query<{ name: string }>('SELECT name FROM boards WHERE id=$1', [task.boardId])
+  ).rows[0]?.name
+  await notify(db, {
+    personIds: added,
+    boardId: task.boardId,
+    taskId: task.id,
+    kind: 'assigned',
+    title: actor
+      ? `${actor} atribuiu você a "${task.title}"`
+      : `Você foi atribuído a "${task.title}"`,
+    body: board || '',
+    actorId,
+  })
 }
 
 /** Saves column widths of the task table, or of the subitem tables (kept apart in the settings). */

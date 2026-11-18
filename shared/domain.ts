@@ -202,16 +202,56 @@ export interface Group {
   source?: string | null
   externalId?: string | null
 }
+/** What starts an automation ("Quando…"). */
+export type AutomationTrigger =
+  /** A status-type column changes, to one label or (optionId null) to any. */
+  | { type: 'status_changed'; columnId: string; optionId: string | null }
+  | { type: 'item_created' }
+  | { type: 'moved_to_group'; groupId: string }
+  /** The last open subitem of a task is done. */
+  | { type: 'subitems_done' }
+  /** A date column reaches today, shifted by offsetDays (-3 = three days before). */
+  | { type: 'date_arrives'; columnId: string; offsetDays: number }
+  /** Every day, every week on a weekday (0 = Sunday) or every month on a day (1–31). */
+  | { type: 'recurring'; every: 'day' | 'week' | 'month'; weekday?: number; monthDay?: number }
+/** What an automation does ("Então…"). */
+export type AutomationAction =
+  | { type: 'move_group'; groupId: string }
+  /** Sets a status-type column; optionId null clears it. */
+  | { type: 'set_status'; columnId: string; optionId: string | null }
+  | { type: 'set_date'; columnId: string; mode: 'today' | 'offset' | 'clear'; days?: number }
+  | { type: 'assign'; mode: 'set' | 'add' | 'clear'; personIds: string[] }
+  /** Notifies the task's owners, or the chosen people. */
+  | { type: 'notify'; to: 'owners' | 'people'; personIds: string[]; message: string }
+  /** Recurring rules only: creates an item in the group ({data} becomes the day's date). */
+  | { type: 'create_item'; groupId: string; title: string }
+export type AutomationTriggerType = AutomationTrigger['type']
+export type AutomationActionType = AutomationAction['type']
 export interface BoardAutomation {
   id: string
   boardId: string
-  columnId: string
-  optionId: string
-  groupId: string
+  trigger: AutomationTrigger
+  actions: AutomationAction[]
+  /** Set only for the classic "status changed → move to group" rule (also the monday ones). */
+  columnId: string | null
+  optionId: string | null
+  groupId: string | null
   description: string
   enabled: boolean
   createdAt: string
   updatedAt: string
+}
+export interface AppNotification {
+  id: string
+  personId: string
+  boardId: string | null
+  taskId: string | null
+  kind: 'assigned' | 'comment' | 'reply' | 'automation'
+  title: string
+  body: string
+  actorId: string | null
+  createdAt: string
+  readAt: string | null
 }
 export interface AutomationRun {
   id: string

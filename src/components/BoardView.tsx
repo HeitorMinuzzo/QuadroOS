@@ -793,6 +793,7 @@ function BoardViewContent({
           key={board.id}
           board={board}
           groups={data.groups.filter((g) => g.boardId === board.id)}
+          people={data.people}
         />
       )}
       {(tab === 'table' || tab === 'kanban' || tab === 'calendar') && (

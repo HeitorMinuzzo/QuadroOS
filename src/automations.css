@@ -652,3 +652,109 @@
     transition: none;
   }
 }
+
+/* Trigger/action builder: one column of fields, rows of two or three side by side. */
+.automation-editor-step {
+  grid-template-columns: minmax(0, 1fr);
+}
+.automation-editor-step label,
+.automation-people {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  color: #596881;
+}
+.automation-field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.automation-field-row.is-three {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 90px;
+}
+.automation-editor-step input[type='number'],
+.automation-editor-step input:not([type]) {
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+  font: inherit;
+  font-size: 13px;
+}
+.automation-editor-step .automation-footnote {
+  margin: -4px 0 0;
+}
+.automation-action-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.automation-action-editor > li {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e6ebf4;
+  border-radius: 10px;
+  background: #fbfcff;
+}
+.automation-action-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.automation-action-head > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+.automation-editor-step > button {
+  justify-self: start;
+}
+.automation-people .assignee-trigger {
+  justify-content: flex-start;
+  min-height: 38px;
+  padding: 4px 10px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
+}
+.automation-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #34415b;
+  font-size: 13px;
+}
+.automation-action-list > li {
+  position: relative;
+  padding-left: 14px;
+  overflow-wrap: anywhere;
+}
+.automation-action-list > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8b9cba;
+}
+.automation-flow-step > p {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+  .automation-field-row,
+  .automation-field-row.is-three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

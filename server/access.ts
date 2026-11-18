@@ -65,6 +65,14 @@ async function facts(db: Database, viewer: Viewer, boardIds: string[]) {
   )
 }
 
+/** Of these boards, the ones the viewer may open. */
+export async function visibleBoards(db: Database, viewer: Viewer, boardIds: string[]) {
+  if (!boardIds.length) return new Set<string>()
+  if (!viewer.accountId || viewer.role === 'admin') return new Set(boardIds)
+  const known = await facts(db, viewer, boardIds)
+  return new Set(boardIds.filter((id) => decide(viewer, known.get(id)).canView))
+}
+
 export async function assertBoard(
   db: Database,
   viewer: Viewer,

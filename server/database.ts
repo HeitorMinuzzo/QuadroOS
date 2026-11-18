@@ -162,6 +162,30 @@ export async function migrate(db: Database) {
     `UPDATE boards SET favorite=false WHERE favorite`,
     `ALTER TABLE boards ADD COLUMN IF NOT EXISTS sector_id TEXT REFERENCES sectors(id) ON DELETE SET NULL`,
     `ALTER TABLE boards ADD COLUMN IF NOT EXISTS sector_role TEXT NOT NULL DEFAULT 'editor'`,
+    // Automations: any trigger with a list of actions. The classic columns stay filled only for
+    // "status changed → move to group" (monday imports rely on them); the others leave them empty.
+    `ALTER TABLE board_automations ADD COLUMN IF NOT EXISTS trigger JSONB`,
+    `ALTER TABLE board_automations ADD COLUMN IF NOT EXISTS actions JSONB`,
+    `ALTER TABLE board_automations ADD COLUMN IF NOT EXISTS state JSONB NOT NULL DEFAULT '{}'`,
+    `ALTER TABLE board_automations ALTER COLUMN column_id DROP NOT NULL`,
+    `ALTER TABLE board_automations ALTER COLUMN option_id DROP NOT NULL`,
+    `ALTER TABLE board_automations ALTER COLUMN group_id DROP NOT NULL`,
+    `UPDATE board_automations SET
+       trigger=jsonb_build_object('type','status_changed','columnId',column_id,'optionId',option_id),
+       actions=jsonb_build_array(jsonb_build_object('type','move_group','groupId',group_id))
+     WHERE trigger IS NULL`,
+    // Date and recurring rules fire once per task and date.
+    `CREATE TABLE IF NOT EXISTS automation_fired (
+      rule_id TEXT NOT NULL REFERENCES board_automations(id) ON DELETE CASCADE,
+      task_id TEXT NOT NULL, fire_key TEXT NOT NULL, created_at TEXT NOT NULL,
+      PRIMARY KEY (rule_id, task_id, fire_key))`,
+    `CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY, person_id TEXT NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+      board_id TEXT REFERENCES boards(id) ON DELETE CASCADE,
+      task_id TEXT REFERENCES tasks(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL DEFAULT '',
+      actor_id TEXT, created_at TEXT NOT NULL, read_at TEXT)`,
+    `CREATE INDEX IF NOT EXISTS notifications_person_idx ON notifications(person_id, created_at)`,
   ]
   await db.transaction(async (tx) => {
     for (const sql of statements) await tx.query(sql)

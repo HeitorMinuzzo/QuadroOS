@@ -31,6 +31,7 @@ const PARTICIPATION = [
   /^\/api\/boards\/[^/]+\/favorite$/,
   /^\/api\/tasks\/[^/]+\/comments$/,
   /^\/api\/comments\/[^/]+\/like$/,
+  /^\/api\/notifications\/read$/,
 ]
 const SESSION_COOKIE = 'quadroos_session'
 const SESSION_DAYS = 14

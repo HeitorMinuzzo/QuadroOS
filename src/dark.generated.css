@@ -2957,6 +2957,31 @@
         color: #5ca3ff
     }
 }
+:where(:root[data-theme='dark']) .automation-editor-step label, :where(:root[data-theme='dark']) .automation-people {
+    color: #9cadc8
+}
+:where(:root[data-theme='dark']) .automation-editor-step input[type='number'], :where(:root[data-theme='dark']) .automation-editor-step input:not([type]) {
+    border: 1px solid var(--ui-control-border);
+    border-radius: var(--ui-control-radius);
+    background: var(--ui-surface);
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .automation-action-editor > li {
+    border: 1px solid #3b3e43;
+    border-radius: 10px;
+    background: #191b22
+}
+:where(:root[data-theme='dark']) .automation-people .assignee-trigger {
+    border: 1px solid var(--ui-control-border);
+    border-radius: var(--ui-control-radius)
+}
+:where(:root[data-theme='dark']) .automation-action-list {
+    color: #b2c2e2
+}
+:where(:root[data-theme='dark']) .automation-action-list > li::before {
+    border-radius: 50%;
+    background: #8b9cba
+}
 /*  from interface.css  */
 :where(:root[data-theme='dark']) .button, :where(:root[data-theme='dark']) [data-slot='button'][data-size='default'] {
     border-radius: var(--ui-control-radius)
@@ -3758,6 +3783,43 @@
     :where(:root[data-theme='dark']) .modal.drawer-modal {
         border-radius: 0
     }
+}
+:where(:root[data-theme='dark']) .notification-button .notification-count {
+    border-radius: 8px;
+    background: #e2445c;
+    color: #fff;
+    box-shadow: 0 0 0 2px var(--ui-surface)
+}
+:where(:root[data-theme='dark']) .notifications-section-heading h3 {
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .notifications-section-heading h3 > span {
+    border-radius: 9px;
+    background: var(--ui-selected);
+    color: var(--primary-text)
+}
+:where(:root[data-theme='dark']) .notification-list > button.is-unread {
+    border-color: #3a4a63;
+    background: #1c1e25
+}
+:where(:root[data-theme='dark']) .notification-unread {
+    border-radius: 50%;
+    background: var(--primary)
+}
+:where(:root[data-theme='dark']) .notification-icon.kind-assigned {
+    background: #1f242b;
+    color: #6aabff
+}
+:where(:root[data-theme='dark']) .notification-icon.kind-comment, :where(:root[data-theme='dark']) .notification-icon.kind-reply {
+    background: #1b241f;
+    color: #73c49a
+}
+:where(:root[data-theme='dark']) .notification-icon.kind-automation {
+    background: #24222c;
+    color: #a796ff
+}
+:where(:root[data-theme='dark']) .notifications-empty {
+    color: var(--ui-muted)
 }
 /*  from column-values.css  */
 :where(:root[data-theme='dark']) .files-cell-trigger {

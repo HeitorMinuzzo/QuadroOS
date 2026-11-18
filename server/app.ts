@@ -22,7 +22,11 @@ import {
   automationHistory,
   saveAutomation,
   deleteAutomation,
+  automationBody,
+  afterTaskCreated,
+  startAutomationScheduler,
 } from './automations.ts'
+import { notifyComment, registerNotifications } from './notifications.ts'
 import { type Database, migrate, camelRow } from './database.ts'
 import { seed } from './seed.ts'
 import {
@@ -30,6 +34,7 @@ import {
   createBoard,
   insertTask,
   updateTask,
+  notifyAssigned,
   resizeColumns,
   reorderColumns,
   moveTask,
@@ -112,6 +117,8 @@ export async function buildApp(
     oidc?: OidcConfig
     oidcFetch?: typeof fetch
     trustProxy?: TrustProxy
+    /** Runs date and recurring automations in the background (the real server turns it on). */
+    scheduler?: boolean
   } = {},
 ) {
   const mode = options.auth ?? authMode()
@@ -203,20 +210,14 @@ export async function buildApp(
   const mondaySessions = createMondaySessions(options.mondayDownload)
   const mondayBatch = await createMondayBatch(db, mondaySessions, options.mondayFetch)
   let individualImports = 0
+  const stopScheduler = options.scheduler ? startAutomationScheduler(db) : null
   app.addHook('onClose', async () => {
+    stopScheduler?.()
     await mondayBatch.close()
     await mondaySessions.close()
   })
   registerFileRoutes(app, db)
-  const automationFields = z
-    .object({
-      columnId: text,
-      optionId: text,
-      groupId: text,
-      description: z.string().trim().max(1000),
-      enabled: z.boolean(),
-    })
-    .strict()
+  registerNotifications(app, db)
   app.get<{ Params: { id: string } }>('/api/boards/:id/automations', (request) =>
     listAutomations(db, request.params.id),
   )
@@ -224,7 +225,7 @@ export async function buildApp(
     automationHistory(db, request.params.id),
   )
   app.post<{ Params: { id: string } }>('/api/boards/:id/automations', async (request, reply) => {
-    const body = automationFields.partial({ description: true, enabled: true }).parse(request.body)
+    const body = automationBody.parse(request.body)
     return reply
       .status(201)
       .send(await db.transaction((tx) => saveAutomation(tx, request.params.id, body)))
@@ -232,7 +233,7 @@ export async function buildApp(
   app.patch<{ Params: { id: string; ruleId: string } }>(
     '/api/boards/:id/automations/:ruleId',
     async (request) => {
-      const body = automationFields.partial().parse(request.body)
+      const body = automationBody.parse(request.body)
       if (!Object.keys(body).length) throw new DomainError('Informe o que deseja alterar.')
       return db.transaction((tx) =>
         saveAutomation(tx, request.params.id, body, request.params.ruleId),
@@ -402,16 +403,26 @@ export async function buildApp(
         parentId: text.nullable().optional(),
       })
       .parse(request.body)
-    return reply
-      .status(201)
-      .send(
-        await db.transaction((tx) =>
-          insertTask(
-            tx,
-            data as Partial<Task> & { boardId: string; groupId: string; title: string },
-          ),
-        ),
-      )
+    const actorId = request.viewer.personId
+    return reply.status(201).send(
+      await db.transaction(async (tx) => {
+        const task = await insertTask(
+          tx,
+          data as Partial<Task> & { boardId: string; groupId: string; title: string },
+        )
+        // A subitem copying its parent's owners is not news to them.
+        const parent = task.parentId
+          ? (await tx.query('SELECT owner_ids FROM tasks WHERE id=$1', [task.parentId])).rows[0]
+          : null
+        await notifyAssigned(
+          tx,
+          parent ? { ownerIds: (parent.owner_ids as string[]) || [] } : null,
+          task,
+          actorId,
+        )
+        return afterTaskCreated(tx, task, { actorId })
+      }),
+    )
   })
   app.patch<{ Params: { id: string } }>('/api/tasks/:id', async (request, reply) => {
     const data = z
@@ -423,7 +434,9 @@ export async function buildApp(
     const { version, ...changes } = data
     if (!Object.keys(changes).length)
       return reply.status(400).send({ message: 'Informe o que deseja alterar.' })
-    return db.transaction((tx) => updateTask(tx, request.params.id, version, changes))
+    return db.transaction((tx) =>
+      updateTask(tx, request.params.id, version, changes, { actorId: request.viewer.personId }),
+    )
   })
   app.delete('/api/tasks', async (request, reply) => {
     const { ids } = z.object({ ids: z.array(text).min(1).max(2000) }).parse(request.body)
@@ -482,6 +495,12 @@ export async function buildApp(
             result.rows[0].id,
           ],
         )
+      await notifyComment(tx, {
+        taskId: request.params.id,
+        authorId: request.viewer.personId,
+        parentId: parentId || null,
+        body,
+      })
       return camelRow(result.rows[0])
     })
     return reply.status(201).send(comment)

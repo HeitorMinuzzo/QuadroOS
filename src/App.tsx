@@ -38,6 +38,7 @@ import { Sidebar } from './components/Sidebar'
 import { BoardView, type BoardTab } from './components/BoardView'
 import { ImportDialog } from './components/ImportDialog'
 import { TaskDrawer } from './components/TaskDrawer'
+import { NotificationsPanel, useNotifications } from './components/Notifications'
 import { CreateEntity, CreateTask } from './components/Forms'
 import { ColumnEditor } from './components/ColumnEditor'
 import { WorkspaceView } from './components/WorkspaceView'
@@ -85,6 +86,7 @@ export function App() {
   const [loadError, setLoadError] = useState('')
   const [route, setRoute] = useState(readRoute)
   const [modal, setModal] = useState<ModalName>(null)
+  const notifications = useNotifications()
   const [taskId, setTaskId] = useState<string | null>(null)
   const [taskPanelTab, setTaskPanelTab] = useState<TaskPanelTab>('details')
   const [createGroupId, setCreateGroupId] = useState<string | undefined>()
@@ -554,11 +556,20 @@ export function App() {
             </IconButton>
             <button
               className="icon-button notification-button"
-              aria-label={`Notificações: ${overdue.length} tarefas atrasadas`}
-              onClick={() => setModal('notifications')}
+              aria-label={`Notificações: ${notifications.unread} não lidas, ${overdue.length} tarefas atrasadas`}
+              onClick={() => {
+                void notifications.refresh()
+                setModal('notifications')
+              }}
             >
               <Bell size={18} />
-              {overdue.length > 0 && <i />}
+              {notifications.unread > 0 ? (
+                <b className="notification-count">
+                  {notifications.unread > 99 ? '99+' : notifications.unread}
+                </b>
+              ) : (
+                overdue.length > 0 && <i />
+              )}
             </button>
             <AccountMenu
               person={data.people.find((p) => p.id === me)}
@@ -719,40 +730,20 @@ export function App() {
       {modal === 'notifications' && (
         <Modal
           title="Notificações"
-          subtitle="Prazos que merecem a sua atenção."
+          subtitle="O que aconteceu com você e o que está atrasado."
           onClose={closeModal}
         >
-          <div className="notification-list">
-            {overdue.length ? (
-              overdue.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => {
-                    navigate(t.boardId)
-                    openTask(t.id)
-                  }}
-                >
-                  <span className="notification-icon">
-                    <Bell size={17} />
-                  </span>
-                  <span>
-                    <strong>{t.title}</strong>
-                    <small>
-                      {data.boards.find((b) => b.id === t.boardId)?.name} · Prazo{' '}
-                      {new Date(`${t.dueDate}T12:00:00`).toLocaleDateString('pt-BR')}
-                    </small>
-                  </span>
-                  <ChevronRight size={16} />
-                </button>
-              ))
-            ) : (
-              <EmptyState
-                icon={<CircleCheck size={30} />}
-                title="Tudo em dia por aqui."
-                description="Nenhuma tarefa com prazo vencido. Um respiro para o próximo passo."
-              />
-            )}
-          </div>
+          <NotificationsPanel
+            items={notifications.items}
+            unread={notifications.unread}
+            overdue={overdue}
+            boards={data.boards}
+            onMarkRead={(ids) => void notifications.markRead(ids)}
+            onOpen={(boardId, taskId, tab) => {
+              navigate(boardId)
+              openTask(taskId, tab)
+            }}
+          />
         </Modal>
       )}
       {modal === 'help' && (
