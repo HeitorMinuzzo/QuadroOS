@@ -2642,10 +2642,8 @@
 :where(:root[data-theme='dark']) .task-table > tbody > tr > td.check-cell, :where(:root[data-theme='dark']) .task-table > tbody > tr > td.title-cell:not([colspan]) {
     background-color: inherit
 }
-:where(:root[data-theme='dark']) .group-table-wrap.is-scrolled-x .task-table > * > tr > .title-cell {
-    box-shadow: inset 0 -1px #25272e,
-    inset -1px 0 #25272e,
-    6px 0 8px -4px rgb(30 40 70 / 0.12)
+:where(:root[data-theme='dark']) .group-table-wrap.is-scrolled-x .task-table > * > tr > .title-cell::after {
+    background: linear-gradient(to right, rgb(30 40 70 / 0.1), transparent)
 }
 :where(:root[data-theme='dark']) .group-scrollbar {
     background: color-mix(in srgb, var(--ui-surface, #171920) 85%, transparent)

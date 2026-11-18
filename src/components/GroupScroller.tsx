@@ -10,7 +10,6 @@ export function GroupScroller({ children }: { children: ReactNode }) {
   const bar = useRef<HTMLDivElement>(null)
   /** How far the table scrolls sideways; the bar gets exactly the same range. */
   const [range, setRange] = useState(0)
-  const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const element = wrap.current
     if (!element) return
@@ -26,19 +25,42 @@ export function GroupScroller({ children }: { children: ReactNode }) {
       window.removeEventListener('resize', measure)
     }
   }, [])
-  // Each side copies the other's position only when they differ, so the echo stops by itself.
-  const follow = (from: HTMLDivElement | null, to: HTMLDivElement | null) => {
+
+  // Whichever side the person scrolls leads until it stops; the other only follows. Copying
+  // back and forth made both sides nudge each other on scaled screens (fractional pixels),
+  // which felt like a stuck scroll.
+  const leader = useRef<'wrap' | 'bar' | null>(null)
+  const release = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const shadow = useRef(false)
+  const follow = (side: 'wrap' | 'bar') => {
+    if (leader.current && leader.current !== side) return
+    leader.current = side
+    clearTimeout(release.current)
+    release.current = setTimeout(() => (leader.current = null), 120)
+    const from = side === 'wrap' ? wrap.current : bar.current
+    const to = side === 'wrap' ? bar.current : wrap.current
     if (!from) return
-    setScrolled(from.scrollLeft > 0)
-    if (to && Math.abs(to.scrollLeft - from.scrollLeft) >= 1) to.scrollLeft = from.scrollLeft
+    if (to) to.scrollLeft = from.scrollLeft
+    // The edge shadow is a class toggled straight on the element: no React render per frame.
+    const scrolled = from.scrollLeft > 0
+    if (scrolled !== shadow.current) {
+      shadow.current = scrolled
+      wrap.current?.classList.toggle('is-scrolled-x', scrolled)
+    }
   }
+  useEffect(() => () => clearTimeout(release.current), [])
+  // React rewrites the class when the bar appears or goes; keep the shade in step.
+  useEffect(() => {
+    wrap.current?.classList.toggle('is-scrolled-x', shadow.current)
+  })
+
   const overflowing = range > 1
   return (
     <>
       <div
         ref={wrap}
-        className={`group-table-wrap ${overflowing ? 'has-group-scrollbar' : ''} ${scrolled ? 'is-scrolled-x' : ''}`}
-        onScroll={() => follow(wrap.current, bar.current)}
+        className={`group-table-wrap ${overflowing ? 'has-group-scrollbar' : ''}`}
+        onScroll={() => follow('wrap')}
       >
         {children}
       </div>
@@ -47,7 +69,7 @@ export function GroupScroller({ children }: { children: ReactNode }) {
           ref={bar}
           className="group-scrollbar"
           aria-hidden="true"
-          onScroll={() => follow(bar.current, wrap.current)}
+          onScroll={() => follow('bar')}
         >
           <div style={{ width: `calc(100% + ${range}px)` }} />
         </div>
