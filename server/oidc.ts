@@ -5,8 +5,10 @@
 //
 // Keycloak decides who may enter (the realm only has people of the AD group QuadroOS; an
 // optional OIDC_REQUIRED_GROUP checks the `groups` claim as well). Everything else stays here: a
-// new account starts as a reader, administrators change roles and sectors, and deactivating an
-// account here also blocks it. The first account ever created becomes the administrator.
+// new account starts as a member when its person already owns or edits a board (imported from
+// monday, or given through a sector), otherwise as a reader; administrators change roles and
+// sectors, and deactivating an account here also blocks it. The first account ever created
+// becomes the administrator.
 import { createPublicKey, randomUUID, verify } from 'node:crypto'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { Database } from './database.ts'
@@ -146,10 +148,29 @@ export function companySignIn(db: Database, config: OidcConfig, fetcher: typeof 
         ])
       ).rows.length
       if (taken) throw new DomainError('Já existe outra conta com este e-mail no QuadroOS.', 409)
+      // Someone who already owns or edits boards (from monday, or through a sector) keeps editing
+      // them on the first sign-in instead of arriving read-only everywhere.
+      const editsBoards = (
+        await tx.query(
+          `SELECT 1 FROM board_members WHERE person_id=$1 AND role IN ('owner','editor')
+           UNION ALL
+           SELECT 1 FROM sector_members s JOIN boards b ON b.sector_id=s.sector_id
+           WHERE s.person_id=$1 AND b.sector_role='editor'
+           LIMIT 1`,
+          [personId],
+        )
+      ).rows.length
       const id = randomUUID()
       await tx.query(
         `INSERT INTO accounts (id,person_id,email,role,external_id,created_at) VALUES ($1,$2,$3,$4,$5,$6)`,
-        [id, personId, address, first ? 'admin' : 'viewer', subject, new Date().toISOString()],
+        [
+          id,
+          personId,
+          address,
+          first ? 'admin' : editsBoards ? 'member' : 'viewer',
+          subject,
+          new Date().toISOString(),
+        ],
       )
       return { id, active: true }
     })

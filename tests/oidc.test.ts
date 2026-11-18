@@ -38,6 +38,8 @@ test('company sign-in: user and password checked with Keycloak, first account ad
       },
     ],
     ['maria', { password: 'senha-da-maria', claims: { sub: 'u2', email: 'maria@empresa.com' } }],
+    ['joao', { password: 'senha-do-joao', claims: { sub: 'u3', email: 'Joao@Empresa.com' } }],
+    ['ana', { password: 'senha-da-ana', claims: { sub: 'u4', email: 'ana@empresa.com' } }],
     [
       'falso',
       {
@@ -94,8 +96,16 @@ test('company sign-in: user and password checked with Keycloak, first account ad
     oidc: { issuer: ISSUER, clientId: 'quadroos', clientSecret: 'segredo', requiredGroup: '' },
     oidcFetch: keycloak,
   })
+  // Each sign-in comes from its own computer, as through the proxy, so the per-person limit of
+  // ten attempts a minute does not trip in this long scenario.
+  let computer = 0
   const login = (username: string, password: string) =>
-    app.inject({ method: 'POST', url: '/api/auth/login', payload: { username, password } })
+    app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      headers: { 'x-forwarded-for': `192.168.0.${++computer}` },
+      payload: { username, password },
+    })
   const sessionOf = async (cookie?: string) =>
     (
       await app.inject({ url: '/api/auth/session', headers: { cookie: cookie ?? '' } })
@@ -126,6 +136,41 @@ test('company sign-in: user and password checked with Keycloak, first account ad
     assert.equal(reader.account?.role, 'viewer')
     const again = await sessionOf(sessionCookie(await login('maria', 'senha-da-maria')))
     assert.equal(again.account?.id, reader.account?.id)
+
+    // People imported from monday who already edit a board keep editing it on their first sign-in,
+    // linked by email to the imported person; viewers of a board still arrive as readers.
+    await db.query(
+      `INSERT INTO people (id,name,initials,color,email) VALUES
+       ('monday-person-1','João','J','#0073ea','joao@empresa.com'),
+       ('monday-person-2','Ana','A','#0073ea','ana@empresa.com')`,
+    )
+    const board = (
+      await app.inject({
+        method: 'POST',
+        url: '/api/boards',
+        headers: { cookie: admin },
+        payload: { name: 'Obras' },
+      })
+    ).json<{ id: string }>()
+    const shared = await app.inject({
+      method: 'PUT',
+      url: `/api/boards/${board.id}/access`,
+      headers: { cookie: admin },
+      payload: {
+        visibility: 'private',
+        members: [
+          { personId: 'monday-person-1', role: 'editor' },
+          { personId: 'monday-person-2', role: 'viewer' },
+        ],
+      },
+    })
+    assert.equal(shared.statusCode, 200, shared.body)
+    const joao = await sessionOf(sessionCookie(await login('joao', 'senha-do-joao')))
+    assert.equal(joao.account?.role, 'member')
+    assert.equal(joao.personId, 'monday-person-1')
+    const ana = await sessionOf(sessionCookie(await login('ana', 'senha-da-ana')))
+    assert.equal(ana.account?.role, 'viewer')
+    assert.equal(ana.personId, 'monday-person-2')
 
     // Roles are changed here and survive the next sign-in.
     await app.inject({

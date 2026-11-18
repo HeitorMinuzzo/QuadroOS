@@ -75,6 +75,22 @@ const columnFields = {
   scope: z.enum(['tasks', 'subitems']),
   formula: z.string().trim().min(1).max(2000),
 }
+type TrustProxy = boolean | number | string
+/**
+ * TRUST_PROXY: how many proxies sit in front of the app (default 1, the reverse proxy), "true" to
+ * trust any, "false" when clients connect directly, or a comma-separated list of proxy addresses.
+ * Trusting one hop takes the address the proxy saw, so a client cannot fake its own.
+ */
+export function trustProxy(value = process.env.TRUST_PROXY?.trim()): TrustProxy {
+  if (!value) return 1
+  if (value === 'true') return true
+  if (value === 'false') return false
+  return /^\d+$/.test(value) ? Number(value) : value
+}
+/** Fastify's typed option: a hop count becomes "trust the first n hops", as proxy-addr does. */
+function proxyRule(setting: TrustProxy) {
+  return typeof setting === 'number' ? (_address: string, hop: number) => hop < setting : setting
+}
 export async function buildApp(
   db: Database,
   options: {
@@ -85,11 +101,15 @@ export async function buildApp(
     auth?: AuthMode
     oidc?: OidcConfig
     oidcFetch?: typeof fetch
+    trustProxy?: TrustProxy
   } = {},
 ) {
   await migrate(db)
   await seed(db, options.demo ?? true)
   const app = Fastify({
+    // Behind the reverse proxy every connection comes from the proxy itself; trusting it makes
+    // request.ip (rate limits, logs) and request.protocol (Secure cookie) the real client's.
+    trustProxy: proxyRule(options.trustProxy ?? trustProxy()),
     logger: options.logger
       ? { redact: ['req.headers.authorization', 'req.headers.cookie'] }
       : false,
@@ -127,6 +147,10 @@ export async function buildApp(
         message: 'Confira os campos enviados.',
         details: error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).slice(0, 8),
       })
+    if (error.statusCode === 429)
+      return reply
+        .status(429)
+        .send({ message: 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.' })
     if (error.code === '23503')
       return reply
         .status(400)
