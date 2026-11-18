@@ -107,8 +107,9 @@ export async function buildApp(
     trustProxy?: TrustProxy
   } = {},
 ) {
+  const mode = options.auth ?? authMode()
   await migrate(db)
-  await seed(db, options.demo ?? true)
+  await seed(db, options.demo ?? true, mode === 'none')
   const app = Fastify({
     // Behind the reverse proxy every connection comes from the proxy itself; trusting it makes
     // request.ip (rate limits, logs) and request.protocol (Secure cookie) the real client's.
@@ -182,7 +183,7 @@ export async function buildApp(
     app.log.error({ name: error.name, code: error.code }, 'Falha interna')
     return reply.status(500).send({ message: 'Não foi possível concluir. Tente novamente.' })
   })
-  registerAuth(app, db, options.auth ?? authMode(), {
+  registerAuth(app, db, mode, {
     oidc: options.oidc,
     oidcFetch: options.oidcFetch,
   })

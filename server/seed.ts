@@ -2,11 +2,18 @@ import { type Database } from './database.ts'
 import { localDate } from '../shared/domain.ts'
 import { completedGroup } from './repository.ts'
 
-export async function seed(db: Database, demo = true) {
-  await db.query(
-    `INSERT INTO people VALUES ('person-you','Você','VC','#205c48','voce@quadro.local') ON CONFLICT DO NOTHING`,
-  )
-  if (!demo || (await db.query('SELECT id FROM boards LIMIT 1')).rows.length) return
+/**
+ * The built-in "Você" profile exists only where someone uses it: without sign-in (every request
+ * acts as it) and in the demo data. With sign-in people come from accounts and imports, so it is
+ * not recreated after being removed.
+ */
+export async function seed(db: Database, demo = true, localProfile = true) {
+  const fresh = demo && !(await db.query('SELECT id FROM boards LIMIT 1')).rows.length
+  if (localProfile || fresh)
+    await db.query(
+      `INSERT INTO people VALUES ('person-you','Você','VC','#205c48','voce@quadro.local') ON CONFLICT DO NOTHING`,
+    )
+  if (!fresh) return
   await db.transaction(async (tx) => {
     const people = [
       ['person-ana', 'Ana Costa', 'AC', '#bd653c', 'ana@example.com'],

@@ -33,6 +33,17 @@ export interface MondayImportOptions {
   importAutomations?: boolean
   readAsset?: (asset: ImportSourceAsset) => Promise<Buffer | null>
 }
+/**
+ * Updates monday sends without an author (automations, integrations) need someone to point to.
+ * A "monday" person is created the first time one appears; the card still shows the original
+ * author's name from the metadata when monday gave one.
+ */
+async function unknownAuthor(db: Database) {
+  await db.query(
+    `INSERT INTO people (id,name,initials,color,email) VALUES ('monday-person-unknown','monday','MO','#798099','monday@imported.quadro.local') ON CONFLICT DO NOTHING`,
+  )
+  return 'monday-person-unknown'
+}
 function metadataText(value: unknown): string {
   if (Array.isArray(value)) return value.map(metadataText).filter(Boolean).join('\n')
   if (value && typeof value === 'object') {
@@ -633,7 +644,7 @@ export async function applyMondayImport(
         [
           commentId,
           task.id,
-          person?.id || 'person-you',
+          person?.id || (await unknownAuthor(tx)),
           update.body,
           update.createdAt || task.createdAt,
           update.parentExternalId ? commentMap.get(update.parentExternalId) || null : null,

@@ -114,6 +114,8 @@ test('company sign-in: user and password checked with Keycloak, first account ad
   try {
     assert.equal((await sessionOf()).mode, 'oidc')
     assert.equal((await sessionOf()).needsSetup, false)
+    // With sign-in there is no built-in "Você" profile cluttering the people lists.
+    assert.equal((await db.query(`SELECT id FROM people WHERE id='person-you'`)).rows.length, 0)
 
     // Wrong password or someone outside the realm (not in the AD group): the same answer.
     const wrong = await login('heitor.teste', 'errada')
