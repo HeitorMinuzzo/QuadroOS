@@ -12,7 +12,6 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import type { Comment, FileAttachment, Task, Workspace } from '../../shared/domain'
-import { useReadOnly } from '../lib/readonly'
 import { initials } from '../../shared/domain'
 import { api, json } from '../api'
 import { Avatar } from './ui'
@@ -170,7 +169,6 @@ export function TaskUpdates({
   onOpenTask: (id: string) => void
 }) {
   const me = useMe()
-  const readOnly = useReadOnly()
   const comments = data.comments.filter((comment) => comment.taskId === task.id),
     byId = new Map(comments.map((comment) => [comment.id, comment]))
   const [replyTo, setReplyTo] = useState<string | null>(null),
@@ -218,15 +216,9 @@ export function TaskUpdates({
   }
   return (
     <section className="task-updates" aria-label="Atualizações do item">
-      {!readOnly && <UpdateComposer data={data} onSubmit={publish} />}
+      <UpdateComposer data={data} onSubmit={publish} />
       <div className="updates-feed-heading">
-        <h3>
-          {roots.length
-            ? 'Todas as atualizações'
-            : readOnly
-              ? 'Sem atualizações'
-              : 'Comece uma conversa'}
-        </h3>
+        <h3>{roots.length ? 'Todas as atualizações' : 'Comece uma conversa'}</h3>
         <span>
           {roots.length} {roots.length === 1 ? 'atualização' : 'atualizações'}
         </span>
@@ -289,7 +281,7 @@ export function TaskUpdates({
                   </span>
                 )}
               </div>
-              <footer className="update-card-actions" hidden={readOnly}>
+              <footer className="update-card-actions">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -344,7 +336,7 @@ export function TaskUpdates({
                       </div>
                     )
                   })}
-                  {replyTo === comment.id && !readOnly && (
+                  {replyTo === comment.id && (
                     <div id={`reply-${comment.id}`} className="update-reply-editor">
                       <UpdateComposer
                         data={data}

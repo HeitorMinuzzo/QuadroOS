@@ -26,6 +26,12 @@ declare module 'fastify' {
   }
 }
 
+/** What readers may still do on the boards they can see: star them and join the conversation. */
+const PARTICIPATION = [
+  /^\/api\/boards\/[^/]+\/favorite$/,
+  /^\/api\/tasks\/[^/]+\/comments$/,
+  /^\/api\/comments\/[^/]+\/like$/,
+]
 const SESSION_COOKIE = 'quadroos_session'
 const SESSION_DAYS = 14
 const LOCAL_PROFILE: Viewer = { personId: 'person-you', role: 'admin', accountId: null }
@@ -178,8 +184,9 @@ export function registerAuth(
     if (!path.startsWith('/api/') || path === '/api/health' || path.startsWith('/api/auth/')) return
     if (!request.viewer)
       return reply.status(401).send({ message: 'Entre com sua conta para continuar.' })
-    // Favorites are personal, so read-only accounts may still star the boards they see.
-    const personal = /^\/api\/boards\/[^/]+\/favorite$/.test(path)
+    // Favorites are personal and conversations do not change the work, so read-only accounts may
+    // still star, comment on and like what they see (the board check still applies).
+    const personal = PARTICIPATION.some((route) => route.test(path))
     if (request.viewer.role === 'viewer' && !personal && !['GET', 'HEAD'].includes(request.method))
       return reply.status(403).send({ message: 'Seu acesso é somente de leitura.' })
   })

@@ -6,7 +6,7 @@ Gestão de tarefas e projetos em português, com quadros flexíveis e uma instal
 
 ![QuadroOS com tema claro, navegação lateral e tarefas organizadas por grupos](docs/screenshots/quadroos.png)
 
-> **0.1.0 · Alpha:** com `AUTH_MODE=none` (padrão) o QuadroOS funciona com um perfil local, sem login. Com `AUTH_MODE=local` cada pessoa entra com e-mail e senha: o primeiro acesso cria o administrador, que cria as demais contas (administrador, membro ou leitor) com senha temporária. Com `AUTH_MODE=oidc` a tela pede o usuário e a senha da rede, que o servidor valida no Keycloak (ligado ao AD, só com o grupo `QuadroOS`), como no Hefesto; a primeira pessoa vira administradora e as demais chegam como leitor, com papéis e setores ajustados no próprio QuadroOS (veja `.env.example`). Não publique a API em um ambiente compartilhado com `AUTH_MODE=none`.
+> **0.1.0 · Alpha:** com `AUTH_MODE=none` (padrão) o QuadroOS funciona com um perfil local, sem login. Com `AUTH_MODE=local` cada pessoa entra com e-mail e senha: o primeiro acesso cria o administrador, que cria as demais contas (administrador, membro ou leitor) com senha temporária. Com `AUTH_MODE=oidc` a tela pede o usuário e a senha da rede, que o servidor valida no Keycloak (ligado ao AD, só com o grupo `QuadroOS`), como no Hefesto; a primeira pessoa vira administradora, quem já é dono ou editor de algum quadro (por exemplo, importado do monday) chega como membro e as demais como leitor, com papéis e setores ajustados no próprio QuadroOS (veja `.env.example`). Leitores veem os quadros a que têm acesso e participam das atualizações (comentar, responder e curtir), sem alterar as tarefas. Não publique a API em um ambiente compartilhado com `AUTH_MODE=none`.
 
 ## Começar
 

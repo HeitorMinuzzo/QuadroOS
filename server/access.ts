@@ -4,7 +4,8 @@
 //   view   — public boards for every account; private boards for their members, direct or through
 //            the board's sector (the stronger of the two roles counts).
 //   edit   — viewing plus an account that is not read-only and, on private boards (or when listed
-//            as a board viewer), an owner/editor membership.
+//            as a board viewer), an owner/editor membership. Favorites, comments and likes only
+//            need viewing: readers take part in the conversation without changing the work.
 //   manage — visibility and members: board owners and administrators.
 // Without sign-in (AUTH_MODE=none) and for administrators every board is fully open.
 import type { FastifyInstance, FastifyRequest } from 'fastify'
@@ -207,6 +208,13 @@ const ROUTES: Record<string, keyof typeof boardOf> = {
   '/api/imports/:id/report': 'importRun',
 }
 
+/** Needs only sight of the board: favorites, comments and likes, also for its readers. */
+const PARTICIPATION = new Set([
+  '/api/boards/:id/favorite',
+  '/api/tasks/:id/comments',
+  '/api/comments/:id/like',
+])
+
 export function registerBoardAccess(app: FastifyInstance, db: Database) {
   app.addHook('preHandler', async (request: FastifyRequest) => {
     const viewer = request.viewer
@@ -219,7 +227,7 @@ export function registerBoardAccess(app: FastifyInstance, db: Database) {
       const need: Need =
         route === '/api/boards/:id/access' && !reading
           ? 'manage'
-          : reading || route === '/api/boards/:id/favorite'
+          : reading || PARTICIPATION.has(route)
             ? 'view'
             : 'edit'
       return assertBoard(db, viewer, await boardOf[kind](db, id), need)

@@ -108,6 +108,70 @@ test('board access: private boards, board roles, read-only accounts and sharing'
     const publicBoard = readerView.boards.find((board) => board.id === 'board-ti')!
     assert.deepEqual(publicBoard.access, { canEdit: false, canManage: false })
 
+    // Readers still take part in the conversation: they comment, reply and like on the boards
+    // they see, but the task itself stays read-only and hidden boards stay hidden.
+    const readable = readerView.tasks.find((task) => task.boardId === 'board-ti')!
+    const comment = await app.inject({
+      method: 'POST',
+      url: `/api/tasks/${readable.id}/comments`,
+      headers: as(leitor.cookie),
+      payload: { body: 'Alguma novidade?' },
+    })
+    assert.equal(comment.statusCode, 201, comment.body)
+    assert.equal(comment.json().authorId, leitor.id)
+    const reply = await app.inject({
+      method: 'POST',
+      url: `/api/tasks/${readable.id}/comments`,
+      headers: as(leitor.cookie),
+      payload: { body: 'Complementando', parentId: comment.json().id },
+    })
+    assert.equal(reply.statusCode, 201, reply.body)
+    const liked = await app.inject({
+      method: 'PUT',
+      url: `/api/comments/${comment.json().id}/like`,
+      headers: as(leitor.cookie),
+      payload: { liked: true },
+    })
+    assert.equal(liked.statusCode, 200, liked.body)
+    assert.deepEqual(liked.json().metadata.localLikes, [leitor.id])
+    const edit = await app.inject({
+      method: 'PATCH',
+      url: `/api/tasks/${readable.id}`,
+      headers: as(leitor.cookie),
+      payload: { title: 'Mudado pelo leitor', version: readable.version },
+    })
+    assert.equal(edit.statusCode, 403)
+    const hiddenTask = await app.inject({
+      method: 'POST',
+      url: '/api/tasks',
+      headers: as(lucas.cookie),
+      payload: { boardId: rh, groupId: group.id, title: 'Só do RH' },
+    })
+    assert.equal(hiddenTask.statusCode, 201, hiddenTask.body)
+    assert.equal(
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/tasks/${hiddenTask.json().id}/comments`,
+          headers: as(leitor.cookie),
+          payload: { body: 'Não deveria ver' },
+        })
+      ).statusCode,
+      404,
+    )
+    // Júlia, a viewer of that board, may comment on it.
+    assert.equal(
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/tasks/${hiddenTask.json().id}/comments`,
+          headers: as(julia.cookie),
+          payload: { body: 'Vi aqui' },
+        })
+      ).statusCode,
+      201,
+    )
+
     // On public boards members can edit; Lucas adds a task to the demo board.
     const demoGroup = readerView.groups.find((item) => item.boardId === 'board-ti')!
     const added = await app.inject({
