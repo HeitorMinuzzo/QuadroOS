@@ -286,10 +286,12 @@ export async function updateTask(
   return taskRow(result.rows[0])
 }
 
+/** Saves column widths of the task table, or of the subitem tables (kept apart in the settings). */
 export async function resizeColumns(
   db: Database,
   boardId: string,
   widths: Record<string, number>,
+  scope: 'tasks' | 'subitems' = 'tasks',
 ): Promise<Board> {
   await lockBoard(db, boardId)
   const board = camelRow<Board>(
@@ -301,10 +303,8 @@ export async function resizeColumns(
     if (!keys.includes(key) || !Number.isInteger(width) || width < min || width > max)
       throw new DomainError('A largura informada não é válida para esta coluna.')
   }
-  const settings = {
-    ...board.settings,
-    columnWidths: { ...board.settings?.columnWidths, ...widths },
-  }
+  const key = scope === 'subitems' ? 'subitemColumnWidths' : 'columnWidths'
+  const settings = { ...board.settings, [key]: { ...board.settings?.[key], ...widths } }
   return camelRow<Board>(
     (
       await db.query('UPDATE boards SET settings=$1::jsonb WHERE id=$2 RETURNING *', [

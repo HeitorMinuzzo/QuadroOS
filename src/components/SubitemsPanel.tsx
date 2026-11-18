@@ -47,6 +47,8 @@ import { TaskCustomCell } from './TaskCustomCell'
 import { AssigneePicker } from './AssigneePicker'
 import { DatePicker } from './DatePicker'
 import { ColumnHeading, useColumnOrder } from './ColumnOrdering'
+import { ColumnResizeHandle } from './ColumnResizing'
+import { columnLayout } from '../../shared/board-layout'
 import { boardColumns, COLUMN_TYPE_NAMES } from '../../shared/columns'
 import { ColumnEditor, ColumnTypeIcon } from './ColumnEditor'
 import { EditLabelsDialog } from './EditLabelsDialog'
@@ -114,6 +116,12 @@ export function SubitemsPanel({
   const [editingColumn, setEditingColumn] = useState<CustomColumn | null>(null)
   const [creatingType, setCreatingType] = useState<ColumnType | null>(null)
   const [draftColumns, setDraftColumns] = useState<string[] | null>(null)
+  // Widths while a column edge is dragged (or saving), then the board's saved subitem widths.
+  const [widthDraft, setWidthDraft] = useState<Record<string, number> | null>(null)
+  const [titleMeasured, setTitleMeasured] = useState(360)
+  const [visibleWidth, setVisibleWidth] = useState<number | null>(null)
+  const panel = useRef<HTMLElement>(null)
+  const titleHeading = useRef<HTMLTableCellElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const selectAll = useRef<HTMLInputElement>(null)
   const restoreFocus = useRef(false)
@@ -133,14 +141,25 @@ export function SubitemsPanel({
   const done = children.filter((t) => isTaskDone(t, board)).length
   const allSelected = children.length > 0 && children.every((t) => selected.includes(t.id))
   const definitions = board ? boardColumns(board, 'subitems') : []
+  const savedWidths = board?.settings?.subitemColumnWidths || {}
+  const clampWidth = (key: string, width: number) => {
+    const { min, max } = columnLayout(key)
+    return Math.max(min, Math.min(max, width))
+  }
   const allColumns = definitions.map((c) => ({
     key: c.id,
     label: c.name,
-    width:
-      board?.settings?.subitemColumnWidths?.[c.id] ||
-      standardColumns.find((column) => column.key === c.id)?.width ||
-      135,
+    width: clampWidth(
+      c.id,
+      widthDraft?.[c.id] ??
+        savedWidths[c.id] ??
+        standardColumns.find((column) => column.key === c.id)?.width ??
+        135,
+    ),
   }))
+  // The name column fills the free space until someone sets its width.
+  const titleSet = widthDraft?.title ?? savedWidths.title
+  const titleWidth = titleSet === undefined ? undefined : clampWidth('title', titleSet)
   const columnKeys =
     draftColumns ??
     (Array.isArray(board?.settings?.subitemColumns)
@@ -150,6 +169,64 @@ export function SubitemsPanel({
     .filter((key) => columnKeys.includes(key))
     .map((key) => allColumns.find((c) => c.key === key)!)
   const statusChoices = statusOptions?.length ? statusOptions : DEFAULT_STATUS_OPTIONS
+  const fixedWidth = 32 + 42 + 40 + visibleColumns.reduce((sum, c) => sum + c.width, 0)
+  const widths: Record<string, number> = {
+    title: titleWidth ?? titleMeasured,
+    ...Object.fromEntries(visibleColumns.map((c) => [c.key, c.width])),
+  }
+  useEffect(() => {
+    const heading = titleHeading.current
+    if (!heading) return
+    const measure = () => setTitleMeasured(Math.round(heading.offsetWidth))
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(heading)
+    return () => observer.disconnect()
+  }, [])
+  // Inside a board table the group scrolls sideways as a whole, usually much wider than the
+  // screen. The subitems stay pinned to the visible part of it, so their own scrollbar sits
+  // right below them instead of at the end of the group.
+  useEffect(() => {
+    const element = panel.current
+    const scroller = element?.parentElement?.closest('.group-table-wrap, .subitems-scroll')
+    if (!element || !scroller?.classList.contains('group-table-wrap')) return
+    const measure = () => setVisibleWidth(scroller.clientWidth)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(scroller)
+    return () => observer.disconnect()
+  }, [])
+  async function saveWidths(next: Record<string, number>) {
+    if (!board) return
+    // Only the edges that moved are saved, so the name column keeps filling the space otherwise.
+    const changed = Object.fromEntries(
+      Object.entries(next).filter(([key, width]) => widths[key] !== width),
+    )
+    if (!Object.keys(changed).length) return setWidthDraft(null)
+    setWidthDraft({ ...savedWidths, ...changed })
+    setError('')
+    try {
+      await api(`/boards/${board.id}/column-widths`, {
+        method: 'PATCH',
+        body: json({ widths: changed, scope: 'subitems' }),
+      })
+      await onRefresh()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível salvar a largura das colunas.')
+    } finally {
+      setWidthDraft(null)
+    }
+  }
+  const resizeHandle = (key: string, label: string) =>
+    !readOnly && (
+      <ColumnResizeHandle
+        columnKey={key}
+        label={label}
+        widths={widths}
+        onPreview={(preview) => setWidthDraft(preview && { ...savedWidths, ...preview })}
+        onSave={saveWidths}
+      />
+    )
   useEffect(() => {
     setSelected((prev) =>
       prev.filter((id) => data.tasks.some((t) => t.id === id && t.parentId === parent.id)),
@@ -287,12 +364,14 @@ export function SubitemsPanel({
   }
   return (
     <section
-      className="subitems-panel"
+      ref={panel}
+      className={`subitems-panel ${visibleWidth ? 'is-pinned' : ''}`}
       aria-label={`Subitens de ${parent.title}`}
       style={
         {
           '--subitem-color': group?.color || board?.color || '#0073ea',
           '--subitem-toolbar-height': selected.length ? '40px' : '0px',
+          ...(visibleWidth ? { width: visibleWidth } : {}),
         } as CSSProperties
       }
     >
@@ -367,12 +446,16 @@ export function SubitemsPanel({
           >
             <table
               className="subitems-table"
-              style={{ minWidth: 394 + visibleColumns.reduce((sum, c) => sum + c.width, 0) }}
+              style={
+                titleWidth === undefined
+                  ? { minWidth: fixedWidth + 280 }
+                  : { width: fixedWidth + titleWidth, minWidth: fixedWidth + titleWidth }
+              }
             >
               <caption className="sr-only">Subitens de {parent.title}</caption>
               <colgroup>
                 <col style={{ width: 32 }} />
-                <col />
+                <col style={titleWidth === undefined ? undefined : { width: titleWidth }} />
                 <col style={{ width: 42 }} />
                 {visibleColumns.map((c) => (
                   <col key={c.key} style={{ width: c.width }} />
@@ -395,7 +478,8 @@ export function SubitemsPanel({
                       />
                     </label>
                   </th>
-                  <th scope="col" className="subitem-name-cell">
+                  <th scope="col" className="subitem-name-cell" ref={titleHeading}>
+                    {resizeHandle('title', 'Subitem')}
                     <div className="subitem-name-heading">
                       <span>Subitem</span>
                       <small>
@@ -423,7 +507,9 @@ export function SubitemsPanel({
                       }
                       order={columnOrder}
                       visibleKeys={visibleColumns.map((column) => column.key)}
-                    />
+                    >
+                      {resizeHandle(c.key, c.label)}
+                    </ColumnHeading>
                   ))}
                   <th scope="col" className="subitem-add-column" inert={readOnly}>
                     <DropdownMenu>

@@ -587,6 +587,26 @@ test('column widths persist per board, validate limits and preserve independent 
     (await workspace(db)).boards.find((b) => b.id === board.id),
     persisted,
   )
+  // Subitem tables keep their own widths, apart from the task table's.
+  const subitems = await app.inject({
+    method: 'PATCH',
+    url: '/api/boards/' + board.id + '/column-widths',
+    payload: { widths: { title: 240, status: 160 }, scope: 'subitems' },
+  })
+  assert.equal(subitems.statusCode, 200, subitems.body)
+  assert.deepEqual(subitems.json().settings.subitemColumnWidths, { title: 240, status: 160 })
+  assert.deepEqual(subitems.json().settings.columnWidths, { title: 520, status: 180 })
+  for (const payload of [
+    { widths: { title: 10 }, scope: 'subitems' },
+    { widths: { status: 150 }, scope: 'grupos' },
+  ]) {
+    const invalid = await app.inject({
+      method: 'PATCH',
+      url: '/api/boards/' + board.id + '/column-widths',
+      payload,
+    })
+    assert.equal(invalid.statusCode, 400)
+  }
   assert.equal(
     (
       await app.inject({

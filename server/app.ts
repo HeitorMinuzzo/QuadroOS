@@ -288,11 +288,14 @@ export async function buildApp(
       : reply.status(404).send({ message: 'Quadro não encontrado.' })
   })
   app.patch<{ Params: { id: string } }>('/api/boards/:id/column-widths', async (request) => {
-    const { widths } = z
-      .object({ widths: z.record(z.string().max(100), z.number().int().positive()) })
+    const { widths, scope } = z
+      .object({
+        widths: z.record(z.string().max(100), z.number().int().positive()),
+        scope: z.enum(['tasks', 'subitems']).default('tasks'),
+      })
       .strict()
       .parse(request.body)
-    return db.transaction((tx) => resizeColumns(tx, request.params.id, widths))
+    return db.transaction((tx) => resizeColumns(tx, request.params.id, widths, scope))
   })
   app.post<{ Params: { id: string } }>('/api/tasks/:id/move', async (request) => {
     const body = z
