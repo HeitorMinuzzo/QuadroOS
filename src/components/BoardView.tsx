@@ -283,6 +283,16 @@ function BoardViewContent({
     () => data.tasks.filter((t) => t.boardId === board.id && !t.parentId),
     [data.tasks, board.id],
   )
+  // Workload lists only who can open this board: everyone on a public board; on a private one its
+  // direct members, the members of its sector, plus anyone still assigned to a task here.
+  const workloadPeople = useMemo(() => {
+    if (board.visibility !== 'private') return data.people
+    const ids = new Set((board.members ?? []).map((m) => m.personId))
+    const sector = board.sectorId && data.sectors?.find((s) => s.id === board.sectorId)
+    if (sector) for (const id of sector.memberIds) ids.add(id)
+    for (const task of allTasks) for (const id of taskOwnerIds(task)) ids.add(id)
+    return data.people.filter((p) => ids.has(p.id))
+  }, [board.visibility, board.members, board.sectorId, data.sectors, data.people, allTasks])
   useEffect(() => {
     const moved = allTasks.filter(
       (t) => previousGroups.current.has(t.id) && previousGroups.current.get(t.id) !== t.groupId,
@@ -1606,7 +1616,7 @@ function BoardViewContent({
             </div>
             <p>Distribuição das tarefas por pessoa.</p>
             <div className="team-chart">
-              {data.people.map((person) => {
+              {workloadPeople.map((person) => {
                 const count = allTasks.filter((t) => taskOwnerIds(t).includes(person.id)).length
                 return (
                   <div key={person.id}>
