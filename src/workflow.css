@@ -2674,12 +2674,9 @@ tr:hover .task-comments,
   font-size: 12px;
 }
 .subitems-table .subitem-add-column {
-  padding: 0;
-  text-align: center;
+  padding: 0 0 0 8px;
+  text-align: left;
   color: #768096;
-}
-.subitems-table .subitem-add-column > button {
-  margin: auto;
 }
 .subitem-columns-menu {
   min-width: 205px;

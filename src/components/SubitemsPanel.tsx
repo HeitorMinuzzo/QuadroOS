@@ -174,6 +174,25 @@ export function SubitemsPanel({
     title: titleWidth ?? titleMeasured,
     ...Object.fromEntries(visibleColumns.map((c) => [c.key, c.width])),
   }
+  // The widths before any drag: a drag (or key press) is compared with these, never with its own
+  // preview, so a column made wider is saved too.
+  const baseWidths: Record<string, number> = {
+    title: savedWidths.title === undefined ? titleMeasured : clampWidth('title', savedWidths.title),
+    ...Object.fromEntries(
+      visibleColumns.map((c) => [
+        c.key,
+        clampWidth(
+          c.key,
+          savedWidths[c.key] ??
+            standardColumns.find((column) => column.key === c.key)?.width ??
+            135,
+        ),
+      ]),
+    ),
+  }
+  // Only the edges that moved count, so the name column keeps filling the space otherwise.
+  const moved = (next: Record<string, number>) =>
+    Object.fromEntries(Object.entries(next).filter(([key, width]) => baseWidths[key] !== width))
   useEffect(() => {
     const heading = titleHeading.current
     if (!heading) return
@@ -198,10 +217,7 @@ export function SubitemsPanel({
   }, [])
   async function saveWidths(next: Record<string, number>) {
     if (!board) return
-    // Only the edges that moved are saved, so the name column keeps filling the space otherwise.
-    const changed = Object.fromEntries(
-      Object.entries(next).filter(([key, width]) => widths[key] !== width),
-    )
+    const changed = moved(next)
     if (!Object.keys(changed).length) return setWidthDraft(null)
     setWidthDraft({ ...savedWidths, ...changed })
     setError('')
@@ -223,7 +239,7 @@ export function SubitemsPanel({
         columnKey={key}
         label={label}
         widths={widths}
-        onPreview={(preview) => setWidthDraft(preview && { ...savedWidths, ...preview })}
+        onPreview={(preview) => setWidthDraft(preview && { ...savedWidths, ...moved(preview) })}
         onSave={saveWidths}
       />
     )
@@ -446,11 +462,7 @@ export function SubitemsPanel({
           >
             <table
               className="subitems-table"
-              style={
-                titleWidth === undefined
-                  ? { minWidth: fixedWidth + 280 }
-                  : { width: fixedWidth + titleWidth, minWidth: fixedWidth + titleWidth }
-              }
+              style={{ minWidth: fixedWidth + (titleWidth ?? 280) }}
             >
               <caption className="sr-only">Subitens de {parent.title}</caption>
               <colgroup>
@@ -460,7 +472,9 @@ export function SubitemsPanel({
                 {visibleColumns.map((c) => (
                   <col key={c.key} style={{ width: c.width }} />
                 ))}
-                <col style={{ width: 40 }} />
+                {/* With a set name width, the last column takes the free space with the table's
+                    lines instead of leaving a blank area after narrow columns. */}
+                <col style={titleWidth === undefined ? { width: 40 } : undefined} />
               </colgroup>
               <thead>
                 <tr>
