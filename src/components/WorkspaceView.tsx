@@ -21,7 +21,7 @@ import {
 import { BoardIcon, readRecent } from './Sidebar'
 import { boardFolders, workspaceInitial } from '../lib/workspaces'
 import { useMe } from '../lib/session'
-import { displayDate } from '../lib/dates'
+import { DueDateText } from './DueSoon'
 
 function plural(count: number, one: string, many: string) {
   return `${count} ${count === 1 ? one : many}`
@@ -186,7 +186,7 @@ export function WorkspaceView({
             <small>{board?.name}</small>
           </span>
           <span className={`home-task-date ${late ? 'overdue' : ''}`}>
-            {displayDate(task.dueDate)}
+            <DueDateText value={task.dueDate} done={isTaskDone(task, board)} overdue={late} />
           </span>
         </button>
       </li>

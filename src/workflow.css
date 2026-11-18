@@ -1511,6 +1511,12 @@ tr:hover .task-comments,
 .due-soon-ring.urgent .due-soon-fill {
   stroke: #fdab3d;
 }
+.due-date-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
 .assignee-caption {
   overflow: hidden;
   text-overflow: ellipsis;

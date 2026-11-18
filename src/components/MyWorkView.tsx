@@ -12,7 +12,7 @@ import {
 } from '../../shared/domain'
 import { EmptyState, PillSelect } from './ui'
 import { useMe } from '../lib/session'
-import { displayDate } from '../lib/dates'
+import { DueDateText } from './DueSoon'
 
 type Bucket = 'overdue' | 'today' | 'week' | 'later' | 'undated'
 const BUCKETS: { id: Bucket; label: string }[] = [
@@ -93,7 +93,11 @@ export function MyWorkView({
           className="my-work-status"
         />
         <span className={`my-work-date ${isOverdue(task, board) ? 'overdue' : ''}`}>
-          {displayDate(task.dueDate)}
+          <DueDateText
+            value={task.dueDate}
+            done={isTaskDone(task, board)}
+            overdue={isOverdue(task, board)}
+          />
         </span>
       </li>
     )

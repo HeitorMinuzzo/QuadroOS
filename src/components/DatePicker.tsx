@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { CalendarDays, CircleAlert } from 'lucide-react'
 import { ptBR } from 'react-day-picker/locale'
 import { localDate } from '../../shared/domain'
-import { DUE_SOON_DAYS, daysUntil, formatDay } from '../lib/dates'
+import { formatDay } from '../lib/dates'
+import { DueSoonRing, dueSoonDays, dueSoonLabel } from './DueSoon'
 import { Calendar } from './ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Button } from './ui/button'
@@ -15,39 +16,6 @@ function inputTime(instant: string | null | undefined) {
   const parts = [time.getHours(), time.getMinutes()]
   if (time.getSeconds()) parts.push(time.getSeconds())
   return parts.map((value) => String(value).padStart(2, '0')).join(':')
-}
-
-/** A ring that fills up as the deadline gets closer: one slice per day, full on the day itself. */
-function DueSoonRing({ daysLeft }: { daysLeft: number }) {
-  const r = 5.5
-  const length = 2 * Math.PI * r
-  const filled = (DUE_SOON_DAYS - daysLeft) / DUE_SOON_DAYS
-  return (
-    <svg
-      className={`due-soon-ring ${daysLeft <= 1 ? 'urgent' : ''}`}
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      aria-hidden="true"
-    >
-      <circle className="due-soon-track" cx="7" cy="7" r={r} />
-      <circle
-        className="due-soon-fill"
-        cx="7"
-        cy="7"
-        r={r}
-        strokeDasharray={length}
-        strokeDashoffset={length * (1 - filled)}
-        transform="rotate(-90 7 7)"
-      />
-    </svg>
-  )
-}
-
-function dueSoonLabel(daysLeft: number) {
-  if (daysLeft === 0) return 'Vence hoje'
-  if (daysLeft === 1) return 'Vence amanhã'
-  return `Vence em ${daysLeft} dias`
 }
 
 export function DatePicker({
@@ -79,8 +47,8 @@ export function DatePicker({
   const [draftTime, setDraftTime] = useState(inputTime(dateTime))
   const selected = value ? new Date(`${value}T12:00:00`) : undefined
   const daysLeft =
-    kind === 'deadline' && done === false && !overdue && value ? daysUntil(value) : null
-  const dueSoon = daysLeft !== null && daysLeft >= 0 && daysLeft < DUE_SOON_DAYS
+    kind === 'deadline' && done !== undefined ? dueSoonDays(value, { done, overdue }) : null
+  const dueSoon = daysLeft !== null
   useEffect(() => {
     if (open) {
       setDraft(value || '')

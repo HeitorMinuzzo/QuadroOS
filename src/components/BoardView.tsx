@@ -103,7 +103,7 @@ import { taskDescendantCounts } from '../../shared/group-summary'
 import { BoardCalendar } from './BoardCalendar'
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover'
 import { useMe } from '../lib/session'
-import { displayDate } from '../lib/dates'
+import { DueDateText } from './DueSoon'
 
 export type BoardTab = 'table' | 'kanban' | 'calendar' | 'overview' | 'automations'
 const columns = [
@@ -1506,8 +1506,12 @@ function BoardViewContent({
                     <div className="kanban-card-bottom">
                       <AssigneeAvatars people={data.people} ids={taskOwnerIds(task)} />
                       <span className={isOverdue(task, board) ? 'overdue' : ''}>
-                        <CalendarDays size={12} />
-                        {displayDate(task.dueDate)}
+                        <DueDateText
+                          value={task.dueDate}
+                          done={isTaskDone(task, board)}
+                          overdue={isOverdue(task, board)}
+                          icon={<CalendarDays size={12} />}
+                        />
                       </span>
                     </div>
                     <PillSelect
@@ -1597,7 +1601,11 @@ function BoardViewContent({
                       </small>
                     </span>
                     <span className={isOverdue(task, board) ? 'overdue' : ''}>
-                      {displayDate(task.dueDate)}
+                      <DueDateText
+                        value={task.dueDate}
+                        done={isTaskDone(task, board)}
+                        overdue={isOverdue(task, board)}
+                      />
                     </span>
                     <ChevronRight size={15} />
                   </button>
