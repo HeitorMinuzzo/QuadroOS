@@ -75,14 +75,17 @@ const columnFields = {
   scope: z.enum(['tasks', 'subitems']),
   formula: z.string().trim().min(1).max(2000),
 }
-type TrustProxy = boolean | number | string
+export type TrustProxy = boolean | number | string
+/** Proxies on the internal network: loopback, link-local and private (10/8, 172.16/12, 192.168/16…). */
+export const INTERNAL_PROXIES = 'loopback,linklocal,uniquelocal'
 /**
- * TRUST_PROXY: how many proxies sit in front of the app (default 1, the reverse proxy), "true" to
- * trust any, "false" when clients connect directly, or a comma-separated list of proxy addresses.
- * Trusting one hop takes the address the proxy saw, so a client cannot fake its own.
+ * TRUST_PROXY: which proxies in front of the app are trusted. By default every proxy on the
+ * internal network, however many there are (openresty, then Coolify's own proxy, then the app):
+ * the client is the first address that is not one of them. Also accepts a hop count, "true" to
+ * trust any, "false" when clients connect directly, or a comma-separated list of addresses/ranges.
  */
 export function trustProxy(value = process.env.TRUST_PROXY?.trim()): TrustProxy {
-  if (!value) return 1
+  if (!value) return INTERNAL_PROXIES
   if (value === 'true') return true
   if (value === 'false') return false
   return /^\d+$/.test(value) ? Number(value) : value
