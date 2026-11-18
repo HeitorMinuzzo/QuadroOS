@@ -12,6 +12,7 @@ import {
 } from '../../shared/domain'
 import { EmptyState, PillSelect } from './ui'
 import { useMe } from '../lib/session'
+import { displayDate } from '../lib/dates'
 
 type Bucket = 'overdue' | 'today' | 'week' | 'later' | 'undated'
 const BUCKETS: { id: Bucket; label: string }[] = [
@@ -22,13 +23,6 @@ const BUCKETS: { id: Bucket; label: string }[] = [
   { id: 'undated', label: 'Sem prazo' },
 ]
 
-function displayDate(value: string | null) {
-  return value
-    ? new Date(`${value}T12:00:00`)
-        .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-        .replace('.', '')
-    : 'Sem prazo'
-}
 function addDays(days: number) {
   const date = new Date()
   date.setDate(date.getDate() + days)

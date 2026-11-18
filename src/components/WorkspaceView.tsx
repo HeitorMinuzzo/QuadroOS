@@ -21,14 +21,8 @@ import {
 import { BoardIcon, readRecent } from './Sidebar'
 import { boardFolders, workspaceInitial } from '../lib/workspaces'
 import { useMe } from '../lib/session'
+import { displayDate } from '../lib/dates'
 
-function displayDate(value: string | null) {
-  return value
-    ? new Date(`${value}T12:00:00`)
-        .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-        .replace('.', '')
-    : 'Sem prazo'
-}
 function plural(count: number, one: string, many: string) {
   return `${count} ${count === 1 ? one : many}`
 }

@@ -1494,6 +1494,23 @@ tr:hover .task-comments,
 .date-picker-trigger.overdue {
   color: #bd3653;
 }
+.due-soon-ring {
+  flex-shrink: 0;
+}
+.due-soon-track {
+  fill: none;
+  stroke: #dce1ec;
+  stroke-width: 2.2;
+}
+.due-soon-fill {
+  fill: none;
+  stroke: #579bfc;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.due-soon-ring.urgent .due-soon-fill {
+  stroke: #fdab3d;
+}
 .assignee-caption {
   overflow: hidden;
   text-overflow: ellipsis;

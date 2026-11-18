@@ -265,6 +265,7 @@ export function SubitemsPanel({
           onChangeDateTime={(dueDate, dueAt) => onPatch(child.id, { dueDate, dueAt })}
           label={`Prazo: ${child.title}`}
           overdue={isOverdue(child, board)}
+          done={isTaskDone(child, board)}
           onChange={(dueDate) => onPatch(child.id, { dueDate })}
         />
       )

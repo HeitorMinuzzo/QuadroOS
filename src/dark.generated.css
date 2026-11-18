@@ -1840,6 +1840,17 @@
 :where(:root[data-theme='dark']) .date-picker-trigger.overdue {
     color: #fa788b
 }
+:where(:root[data-theme='dark']) .due-soon-track {
+    fill: none;
+    stroke: #dce1ec
+}
+:where(:root[data-theme='dark']) .due-soon-fill {
+    fill: none;
+    stroke: #579bfc
+}
+:where(:root[data-theme='dark']) .due-soon-ring.urgent .due-soon-fill {
+    stroke: #fdab3d
+}
 :where(:root[data-theme='dark']) .assignee-avatars .avatar {
     border: 2px solid #33353d
 }

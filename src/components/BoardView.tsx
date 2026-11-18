@@ -103,6 +103,7 @@ import { taskDescendantCounts } from '../../shared/group-summary'
 import { BoardCalendar } from './BoardCalendar'
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover'
 import { useMe } from '../lib/session'
+import { displayDate } from '../lib/dates'
 
 export type BoardTab = 'table' | 'kanban' | 'calendar' | 'overview' | 'automations'
 const columns = [
@@ -111,13 +112,6 @@ const columns = [
   { key: 'priority', label: 'Prioridade' },
   { key: 'date', label: 'Prazo' },
 ]
-function displayDate(value: string | null) {
-  return value
-    ? new Date(`${value}T12:00:00`)
-        .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-        .replace('.', '')
-    : 'Sem prazo'
-}
 const INITIAL_ROWS = 15
 function BoardViewContent({
   data,
@@ -534,6 +528,7 @@ function BoardViewContent({
             onChangeDateTime={(dueDate, dueAt) => onPatch(task.id, { dueDate, dueAt })}
             label={`Prazo: ${task.title}`}
             overdue={isOverdue(task, board)}
+            done={isTaskDone(task, board)}
             onChange={(dueDate) => onPatch(task.id, { dueDate })}
           />
         )

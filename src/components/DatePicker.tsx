@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { CalendarDays, CircleAlert } from 'lucide-react'
 import { ptBR } from 'react-day-picker/locale'
 import { localDate } from '../../shared/domain'
+import { DUE_SOON_DAYS, daysUntil, formatDay } from '../lib/dates'
 import { Calendar } from './ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-const dayFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
 const timeFormatter = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
 function inputTime(instant: string | null | undefined) {
@@ -17,11 +17,45 @@ function inputTime(instant: string | null | undefined) {
   return parts.map((value) => String(value).padStart(2, '0')).join(':')
 }
 
+/** A ring that fills up as the deadline gets closer: one slice per day, full on the day itself. */
+function DueSoonRing({ daysLeft }: { daysLeft: number }) {
+  const r = 5.5
+  const length = 2 * Math.PI * r
+  const filled = (DUE_SOON_DAYS - daysLeft) / DUE_SOON_DAYS
+  return (
+    <svg
+      className={`due-soon-ring ${daysLeft <= 1 ? 'urgent' : ''}`}
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      aria-hidden="true"
+    >
+      <circle className="due-soon-track" cx="7" cy="7" r={r} />
+      <circle
+        className="due-soon-fill"
+        cx="7"
+        cy="7"
+        r={r}
+        strokeDasharray={length}
+        strokeDashoffset={length * (1 - filled)}
+        transform="rotate(-90 7 7)"
+      />
+    </svg>
+  )
+}
+
+function dueSoonLabel(daysLeft: number) {
+  if (daysLeft === 0) return 'Vence hoje'
+  if (daysLeft === 1) return 'Vence amanhã'
+  return `Vence em ${daysLeft} dias`
+}
+
 export function DatePicker({
   value,
   label,
   onChange,
   overdue = false,
+  done,
   kind = 'deadline',
   dateTime = null,
   onChangeDateTime,
@@ -30,6 +64,8 @@ export function DatePicker({
   label: string
   onChange: (date: string | null) => Promise<boolean> | void
   overdue?: boolean
+  /** Whether the task is finished; passing it turns on the approaching-deadline ring. */
+  done?: boolean
   kind?: 'deadline' | 'date'
   dateTime?: string | null
   onChangeDateTime?: (date: string | null, dateTime: string | null) => Promise<boolean> | void
@@ -42,6 +78,9 @@ export function DatePicker({
   const localTime = dateTime ? new Date(dateTime) : null
   const [draftTime, setDraftTime] = useState(inputTime(dateTime))
   const selected = value ? new Date(`${value}T12:00:00`) : undefined
+  const daysLeft =
+    kind === 'deadline' && done === false && !overdue && value ? daysUntil(value) : null
+  const dueSoon = daysLeft !== null && daysLeft >= 0 && daysLeft < DUE_SOON_DAYS
   useEffect(() => {
     if (open) {
       setDraft(value || '')
@@ -79,18 +118,20 @@ export function DatePicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`date-picker-trigger ${overdue ? 'overdue' : ''}`}
-          aria-label={label}
+          className={`date-picker-trigger ${overdue ? 'overdue' : ''} ${dueSoon ? 'due-soon' : ''}`}
+          aria-label={dueSoon ? `${label} · ${dueSoonLabel(daysLeft!)}` : label}
+          title={dueSoon ? dueSoonLabel(daysLeft!) : undefined}
         >
           {overdue ? (
             <CircleAlert size={14} aria-hidden="true" />
+          ) : dueSoon ? (
+            <DueSoonRing daysLeft={daysLeft!} />
           ) : (
             <CalendarDays size={14} aria-hidden="true" />
           )}
           <span>
             {selected
-              ? dayFormatter.format(selected).replace('.', '') +
-                (dateTime ? ` ${timeFormatter.format(localTime!)}` : '')
+              ? formatDay(selected) + (dateTime ? ` ${timeFormatter.format(localTime!)}` : '')
               : kind === 'date'
                 ? 'Selecionar data'
                 : 'Sem prazo'}

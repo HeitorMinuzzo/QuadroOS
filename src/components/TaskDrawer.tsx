@@ -26,6 +26,7 @@ import {
   priorityClass,
   taskOwnerIds,
   isOverdue,
+  isTaskDone,
   localDate,
 } from '../../shared/domain'
 import { EditableText, Modal, PillSelect } from './ui'
@@ -214,6 +215,7 @@ export function TaskDrawer({
                       onChangeDateTime={(dueDate, dueAt) => onPatch(task.id, { dueDate, dueAt })}
                       label="Prazo da tarefa"
                       overdue={isOverdue(task, board)}
+                      done={isTaskDone(task, board)}
                       onChange={(dueDate) => onPatch(task.id, { dueDate })}
                     />
                   </Property>
