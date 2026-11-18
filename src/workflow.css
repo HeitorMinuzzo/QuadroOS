@@ -2441,13 +2441,6 @@ tr:hover .task-comments,
   border: 0;
   background: white;
 }
-/* In a board table: pinned to the visible part of the group, which scrolls sideways as a whole,
-   so the subitems' own scrollbar shows right below them. */
-.subitems-panel.is-pinned {
-  position: sticky;
-  left: 0;
-  box-sizing: border-box;
-}
 .subitems-connectors {
   position: absolute;
   pointer-events: none;

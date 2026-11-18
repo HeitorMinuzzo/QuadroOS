@@ -119,8 +119,6 @@ export function SubitemsPanel({
   // Widths while a column edge is dragged (or saving), then the board's saved subitem widths.
   const [widthDraft, setWidthDraft] = useState<Record<string, number> | null>(null)
   const [titleMeasured, setTitleMeasured] = useState(360)
-  const [visibleWidth, setVisibleWidth] = useState<number | null>(null)
-  const panel = useRef<HTMLElement>(null)
   const titleHeading = useRef<HTMLTableCellElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const selectAll = useRef<HTMLInputElement>(null)
@@ -200,19 +198,6 @@ export function SubitemsPanel({
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(heading)
-    return () => observer.disconnect()
-  }, [])
-  // Inside a board table the group scrolls sideways as a whole, usually much wider than the
-  // screen. The subitems stay pinned to the visible part of it, so their own scrollbar sits
-  // right below them instead of at the end of the group.
-  useEffect(() => {
-    const element = panel.current
-    const scroller = element?.parentElement?.closest('.group-table-wrap, .subitems-scroll')
-    if (!element || !scroller?.classList.contains('group-table-wrap')) return
-    const measure = () => setVisibleWidth(scroller.clientWidth)
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(scroller)
     return () => observer.disconnect()
   }, [])
   async function saveWidths(next: Record<string, number>) {
@@ -380,14 +365,12 @@ export function SubitemsPanel({
   }
   return (
     <section
-      ref={panel}
-      className={`subitems-panel ${visibleWidth ? 'is-pinned' : ''}`}
+      className="subitems-panel"
       aria-label={`Subitens de ${parent.title}`}
       style={
         {
           '--subitem-color': group?.color || board?.color || '#0073ea',
           '--subitem-toolbar-height': selected.length ? '40px' : '0px',
-          ...(visibleWidth ? { width: visibleWidth } : {}),
         } as CSSProperties
       }
     >
