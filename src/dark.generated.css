@@ -3875,7 +3875,7 @@
 :where(:root[data-theme='dark']) .comment-list article.comment-reply {
     border-left: 2px solid var(--ui-border)
 }
-:where(:root[data-theme='dark']) .comment-attachments > a {
+:where(:root[data-theme='dark']) .comment-attachments > a, :where(:root[data-theme='dark']) .comment-attachments > button {
     border: 1px solid var(--ui-border);
     border-radius: 8px;
     color: var(--primary-text)
@@ -4114,13 +4114,13 @@
 :where(:root[data-theme='dark']) .updates-empty p {
     color: var(--ui-muted)
 }
-:where(:root[data-theme='dark']) .update-attachments.comment-attachments > a {
+:where(:root[data-theme='dark']) .update-attachments.comment-attachments > a, :where(:root[data-theme='dark']) .update-attachments.comment-attachments > button {
     border: 1px solid var(--ui-border);
     border-radius: 7px;
     background: var(--ui-surface);
     color: var(--ui-ink)
 }
-:where(:root[data-theme='dark']) .update-attachments > a:hover {
+:where(:root[data-theme='dark']) .update-attachments > a:hover, :where(:root[data-theme='dark']) .update-attachments > button:hover {
     border-color: var(--ui-hover-border);
     background: var(--ui-subtle)
 }
@@ -4354,6 +4354,66 @@
 }
 :where(:root[data-theme='dark']) .task-files-empty p {
     color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .update-attachments.comment-attachments > button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px
+}
+:where(:root[data-theme='dark']) .update-drafts li {
+    border: 1px solid var(--ui-border);
+    border-radius: 7px;
+    background: var(--ui-subtle);
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .update-drafts img, :where(:root[data-theme='dark']) .update-drafts .update-file-icon {
+    border-radius: 4px
+}
+:where(:root[data-theme='dark']) .update-drafts button {
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .update-drafts button:hover {
+    background: var(--ui-border);
+    color: var(--ui-ink)
+}
+:where(:root[data-theme='dark']) .update-composer footer .update-attach {
+    color: var(--ui-muted)
+}
+:where(:root[data-theme='dark']) .image-viewer {
+    border: 0;
+    background: transparent;
+    color: #fff
+}
+:where(:root[data-theme='dark']) .image-viewer::backdrop {
+    background: rgb(10 12 18 / 0.88)
+}
+:where(:root[data-theme='dark']) .image-viewer-stage img {
+    border-radius: 4px;
+    box-shadow: 0 10px 40px rgb(0 0 0 / 0.45)
+}
+:where(:root[data-theme='dark']) .image-viewer-bar {
+    background: linear-gradient(rgb(0 0 0 / 0.55), transparent)
+}
+:where(:root[data-theme='dark']) .image-viewer-bar small {
+    color: rgb(255 255 255 / 0.7)
+}
+:where(:root[data-theme='dark']) .image-viewer-bar a, :where(:root[data-theme='dark']) .image-viewer-bar button, :where(:root[data-theme='dark']) .image-viewer-nav {
+    border: 0;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.12);
+    color: #fff
+}
+:where(:root[data-theme='dark']) .image-viewer-bar a:hover, :where(:root[data-theme='dark']) .image-viewer-bar button:hover, :where(:root[data-theme='dark']) .image-viewer-nav:hover {
+    background: rgb(255 255 255 / 0.22)
+}
+:where(:root[data-theme='dark']) .image-viewer-bar a:focus-visible, :where(:root[data-theme='dark']) .image-viewer-bar button:focus-visible, :where(:root[data-theme='dark']) .image-viewer-nav:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px
+}
+:where(:root[data-theme='dark']) .image-viewer-nav {
+    border-radius: 50%
 }
 /*  from refresh.css  */
 :root:where([data-theme='dark']) {

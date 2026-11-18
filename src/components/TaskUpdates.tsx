@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type ClipboardEvent, type FormEvent } from 'react'
 import {
   MessageSquare,
   Send,
@@ -10,15 +10,19 @@ import {
   FileText,
   Link2,
   ExternalLink,
+  ImagePlus,
+  Maximize2,
+  X,
 } from 'lucide-react'
 import type { Comment, FileAttachment, Task, Workspace } from '../../shared/domain'
-import { initials } from '../../shared/domain'
+import { initials, MAX_COMMENT_FILES, MAX_FILE_SIZE } from '../../shared/domain'
 import { api, json } from '../api'
 import { Avatar } from './ui'
 import { justCreated } from '../lib/motion'
 import { Button } from './ui/button'
 import { ImportedCommentBody } from './ImportedCommentBody'
 import { useMe } from '../lib/session'
+import { ImageViewer, isImageFile } from './ImageViewer'
 
 function authorFor(comment: Comment, data: Workspace) {
   const local = data.people.find((person) => person.id === comment.authorId),
@@ -45,23 +49,12 @@ function CommentDate({ value }: { value: string }) {
   )
 }
 export function UpdateAttachments({ files }: { files: FileAttachment[] }) {
+  const images = files.filter(isImageFile)
+  const [viewing, setViewing] = useState<number | null>(null)
   return (
     <div className="update-attachments comment-attachments">
-      {files.map((file) => (
-        <a
-          key={file.id}
-          href={`/api/files/${file.id}`}
-          download={file.externalUrl ? undefined : file.name}
-          target={file.externalUrl ? '_blank' : undefined}
-          rel="noreferrer"
-        >
-          {!file.externalUrl && /\.(png|jpe?g|gif|webp)$/i.test(file.name) ? (
-            <img src={`/api/files/${file.id}/preview`} alt={file.name} loading="lazy" />
-          ) : (
-            <span className="update-file-icon">
-              <FileText size={22} />
-            </span>
-          )}
+      {files.map((file) => {
+        const details = (
           <span>
             <strong>{file.name}</strong>
             <small>
@@ -72,10 +65,69 @@ export function UpdateAttachments({ files }: { files: FileAttachment[] }) {
                   : `${Math.round(file.size / 1024)} KB`}
             </small>
           </span>
-          <Download size={15} />
-        </a>
-      ))}
+        )
+        // Images open full screen; other files keep downloading (or open their link).
+        return isImageFile(file) ? (
+          <button
+            type="button"
+            key={file.id}
+            title="Ver imagem"
+            onClick={() => setViewing(images.indexOf(file))}
+          >
+            <img src={`/api/files/${file.id}/preview`} alt={file.name} loading="lazy" />
+            {details}
+          </button>
+        ) : (
+          <a
+            key={file.id}
+            href={`/api/files/${file.id}`}
+            download={file.externalUrl ? undefined : file.name}
+            target={file.externalUrl ? '_blank' : undefined}
+            rel="noreferrer"
+          >
+            <span className="update-file-icon">
+              <FileText size={22} />
+            </span>
+            {details}
+            <Download size={15} />
+          </a>
+        )
+      })}
+      {viewing !== null && (
+        <ImageViewer images={images} start={viewing} onClose={() => setViewing(null)} />
+      )}
     </div>
+  )
+}
+/** Pasted screenshots arrive as "image.png"; give them a name that says what they are. */
+function pastedName(file: File, index: number) {
+  if (file.name && file.name !== 'image.png') return file.name
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-')
+  const extension = file.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png'
+  return `imagem-colada-${stamp}${index ? `-${index + 1}` : ''}.${extension}`
+}
+function AttachmentDraft({ file, onRemove }: { file: File; onRemove: () => void }) {
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    if (!file.type.startsWith('image/')) return
+    const next = URL.createObjectURL(file)
+    setUrl(next)
+    return () => URL.revokeObjectURL(next)
+  }, [file])
+  return (
+    <li>
+      {url ? (
+        <img src={url} alt="" />
+      ) : (
+        <span className="update-file-icon" aria-hidden="true">
+          <FileText size={18} />
+        </span>
+      )}
+      <span>{file.name}</span>
+      <button type="button" onClick={onRemove} aria-label={`Remover ${file.name}`}>
+        <X size={14} aria-hidden="true" />
+      </button>
+    </li>
   )
 }
 function UpdateComposer({
@@ -89,26 +141,55 @@ function UpdateComposer({
   label?: string
   placeholder?: string
   reply?: boolean
-  onSubmit: (body: string) => Promise<boolean>
+  onSubmit: (body: string, files: File[]) => Promise<boolean>
 }) {
   const me = useMe()
   const [body, setBody] = useState(''),
+    [files, setFiles] = useState<File[]>([]),
     [sending, setSending] = useState(false),
     [error, setError] = useState(''),
     id = useId(),
-    field = useRef<HTMLTextAreaElement>(null)
+    field = useRef<HTMLTextAreaElement>(null),
+    picker = useRef<HTMLInputElement>(null)
+  const ready = !!body.trim() || files.length > 0
+  function attach(added: File[]) {
+    if (!added.length) return
+    const tooBig = added.filter((file) => file.size > MAX_FILE_SIZE)
+    const next = [...files, ...added.filter((file) => file.size <= MAX_FILE_SIZE)]
+    setError(
+      tooBig.length
+        ? `${tooBig.map((file) => file.name).join(', ')}: cada arquivo pode ter até 5 MB.`
+        : next.length > MAX_COMMENT_FILES
+          ? `Anexe até ${MAX_COMMENT_FILES} arquivos por atualização.`
+          : '',
+    )
+    setFiles(next.slice(0, MAX_COMMENT_FILES))
+  }
+  function paste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const images = [...event.clipboardData.files].filter((file) => file.type.startsWith('image/'))
+    if (!images.length) return
+    event.preventDefault()
+    attach(
+      images.map((file, index) => new File([file], pastedName(file, index), { type: file.type })),
+    )
+  }
   async function submit(event: FormEvent) {
     event.preventDefault()
-    if (!body.trim() || sending) return
+    if (!ready || sending) return
     setSending(true)
     setError('')
     try {
-      if (await onSubmit(body.trim())) {
+      if (await onSubmit(body.trim(), files)) {
         setBody('')
+        setFiles([])
         field.current?.focus()
       } else setError('Não foi possível publicar. Seu texto foi mantido para tentar novamente.')
-    } catch {
-      setError('Não foi possível publicar. Seu texto foi mantido para tentar novamente.')
+    } catch (error) {
+      setError(
+        error instanceof Error && error.message
+          ? `${error.message} Seu texto foi mantido para tentar novamente.`
+          : 'Não foi possível publicar. Seu texto foi mantido para tentar novamente.',
+      )
     } finally {
       setSending(false)
     }
@@ -130,8 +211,8 @@ function UpdateComposer({
           placeholder={placeholder}
           rows={reply ? 2 : 3}
           maxLength={5000}
-          required
           disabled={sending}
+          onPaste={paste}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
               event.preventDefault()
@@ -139,13 +220,46 @@ function UpdateComposer({
             }
           }}
         />
+        {files.length > 0 && (
+          <ul className="update-drafts" aria-label="Anexos desta atualização">
+            {files.map((file, index) => (
+              <AttachmentDraft
+                key={`${file.name}-${index}`}
+                file={file}
+                onRemove={() => setFiles(files.filter((_, i) => i !== index))}
+              />
+            ))}
+          </ul>
+        )}
       </div>
       <footer>
         <div>
           <Avatar person={data.people.find((person) => person.id === me)} small />
           <span>{reply ? 'Responder à conversa' : 'Publicar no item'}</span>
         </div>
-        <Button type="submit" size="sm" disabled={sending || !body.trim()}>
+        <input
+          ref={picker}
+          type="file"
+          multiple
+          hidden
+          onChange={(event) => {
+            attach([...(event.target.files ?? [])])
+            event.target.value = ''
+          }}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="update-attach"
+          disabled={sending}
+          onClick={() => picker.current?.click()}
+          title="Anexar arquivo ou imagem (ou cole uma imagem no texto)"
+        >
+          <ImagePlus size={15} aria-hidden="true" />
+          Anexar
+        </Button>
+        <Button type="submit" size="sm" disabled={sending || !ready}>
           {sending ? <LoaderCircle className="spin" /> : <Send size={14} />}Enviar
         </Button>
       </footer>
@@ -186,9 +300,16 @@ export function TaskUpdates({
   const roots = comments
     .filter((comment) => rootId(comment) === comment.id)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  async function publish(body: string, parentId: string | null = null) {
+  async function publish(body: string, files: File[], parentId: string | null = null) {
     setError('')
-    await api(`/tasks/${task.id}/comments`, { method: 'POST', body: json({ body, parentId }) })
+    let payload: string | FormData = json({ body, parentId })
+    if (files.length) {
+      payload = new FormData()
+      payload.append('body', body)
+      if (parentId) payload.append('parentId', parentId)
+      for (const file of files) payload.append('files', file, file.name)
+    }
+    await api(`/tasks/${task.id}/comments`, { method: 'POST', body: payload })
     try {
       await onRefresh()
     } catch {
@@ -343,7 +464,7 @@ export function TaskUpdates({
                         label="Escrever resposta"
                         placeholder="Escreva uma resposta…"
                         reply
-                        onSubmit={(body) => publish(body, comment.id)}
+                        onSubmit={(body, files) => publish(body, files, comment.id)}
                       />
                       <Button variant="ghost" size="sm" onClick={() => setReplyTo(null)}>
                         Cancelar resposta
@@ -364,8 +485,8 @@ function fileSize(size: number) {
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`
   return `${(size / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`
 }
-function FileRow({ file }: { file: FileAttachment }) {
-  const image = !file.externalUrl && /\.(png|jpe?g|gif|webp)$/i.test(file.name)
+function FileRow({ file, onView }: { file: FileAttachment; onView: () => void }) {
+  const image = isImageFile(file)
   const extension = file.name.includes('.') ? file.name.split('.').pop()!.slice(0, 4) : ''
   return (
     <li>
@@ -375,6 +496,12 @@ function FileRow({ file }: { file: FileAttachment }) {
         download={file.externalUrl ? undefined : file.name}
         target={file.externalUrl ? '_blank' : undefined}
         rel="noreferrer"
+        // Images open full screen; the link still downloads with a modifier or "Salvar link".
+        onClick={(event) => {
+          if (!image || event.ctrlKey || event.metaKey || event.shiftKey) return
+          event.preventDefault()
+          onView()
+        }}
       >
         <span className="task-file-thumb" aria-hidden="true">
           {image ? (
@@ -401,7 +528,13 @@ function FileRow({ file }: { file: FileAttachment }) {
           </small>
         </span>
         <span className="task-file-action" aria-hidden="true">
-          {file.externalUrl ? <ExternalLink size={15} /> : <Download size={15} />}
+          {file.externalUrl ? (
+            <ExternalLink size={15} />
+          ) : image ? (
+            <Maximize2 size={15} />
+          ) : (
+            <Download size={15} />
+          )}
         </span>
       </a>
     </li>
@@ -428,6 +561,9 @@ export function TaskFiles({ task, data }: { task: Task; data: Workspace }) {
     section.files.push(file)
   }
   sections.sort((a, b) => Number(a.key === 'updates') - Number(b.key === 'updates'))
+  // Arrows in the viewer follow the tab's order.
+  const images = sections.flatMap((section) => section.files.filter(isImageFile))
+  const [viewing, setViewing] = useState<number | null>(null)
   return (
     <section className="task-updates task-update-files" aria-label="Arquivos do item">
       <header>
@@ -450,7 +586,11 @@ export function TaskFiles({ task, data }: { task: Task; data: Workspace }) {
             </h4>
             <ul>
               {section.files.map((file) => (
-                <FileRow key={file.id} file={file} />
+                <FileRow
+                  key={file.id}
+                  file={file}
+                  onView={() => setViewing(images.indexOf(file))}
+                />
               ))}
             </ul>
           </div>
@@ -468,6 +608,9 @@ export function TaskFiles({ task, data }: { task: Task; data: Workspace }) {
             </p>
           </div>
         </div>
+      )}
+      {viewing !== null && (
+        <ImageViewer images={images} start={viewing} onClose={() => setViewing(null)} />
       )}
     </section>
   )

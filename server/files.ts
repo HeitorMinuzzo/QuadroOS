@@ -5,6 +5,12 @@ import { camelRow, type Database } from './database.ts'
 import { DomainError } from './errors.ts'
 import { safeUrl } from '../shared/rich-values.ts'
 
+/** The uploaded file's own name, without folders or control characters, at most 200 long. */
+export function cleanFileName(filename: string) {
+  const name = (filename.split(/[\\/]/).pop() || '').replace(/[\u0000-\u001f\u007f]/g, '')
+  return name.slice(0, 200) || 'arquivo'
+}
+
 export function registerFileRoutes(app: FastifyInstance, db: Database) {
   app.get<{ Params: { id: string } }>('/api/files/:id/preview', async (request, reply) => {
     const row = (
@@ -38,10 +44,7 @@ export function registerFileRoutes(app: FastifyInstance, db: Database) {
       const part = await request.file({ limits: { fileSize: MAX_FILE_SIZE, files: 1, fields: 0 } })
       if (!part) throw new DomainError('Escolha um arquivo para anexar.')
       const content = await part.toBuffer()
-      const name =
-        (part.filename.split(/[\\/]/).pop() || 'arquivo')
-          .replace(/[\u0000-\u001f\u007f]/g, '')
-          .slice(0, 200) || 'arquivo'
+      const name = cleanFileName(part.filename)
       const file = await db.transaction(async (tx) => {
         // Lock the board first, like task/column mutations, so deletion and uploads cannot race.
         const row = (

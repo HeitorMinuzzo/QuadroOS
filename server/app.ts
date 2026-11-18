@@ -5,9 +5,16 @@ import fastifyStatic from '@fastify/static'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { z, ZodError } from 'zod'
-import { type Task, COLUMN_TYPES } from '../shared/domain.ts'
+import { randomUUID } from 'node:crypto'
+import {
+  type Task,
+  COLUMN_TYPES,
+  MAX_COMMENT_FILES,
+  MAX_FILE_SIZE,
+  UPDATE_FILES_COLUMN,
+} from '../shared/domain.ts'
 import { addColumn, editColumn, deleteColumn } from './columns.ts'
-import { registerFileRoutes } from './files.ts'
+import { cleanFileName, registerFileRoutes } from './files.ts'
 import { boardColumns } from '../shared/columns.ts'
 import { evaluateFormula, formulaText } from '../shared/formulas.ts'
 import {
@@ -420,10 +427,28 @@ export async function buildApp(
     await db.query('DELETE FROM tasks WHERE id=ANY($1::text[])', [ids])
     return reply.status(204).send()
   })
+  // An update is text, files (attached or pasted images) or both. With files it arrives as
+  // multipart and the comment and its files are saved together.
   app.post<{ Params: { id: string } }>('/api/tasks/:id/comments', async (request, reply) => {
+    let fields: Record<string, unknown> = {}
+    const uploads: { name: string; content: Buffer }[] = []
+    if (request.isMultipart()) {
+      for await (const part of request.parts({
+        limits: { fileSize: MAX_FILE_SIZE, files: MAX_COMMENT_FILES, fields: 2 },
+      })) {
+        if (part.type === 'file') {
+          const content = await part.toBuffer()
+          const name = cleanFileName(part.filename)
+          if (content.length) uploads.push({ name, content })
+        } else fields[part.fieldname] = part.value
+      }
+    } else fields = jsonObject(request.body)
     const { body, parentId } = z
-      .object({ body: z.string().trim().min(1).max(5000), parentId: text.nullable().optional() })
-      .parse(request.body)
+      .object({ body: z.string().trim().max(5000).default(''), parentId: z.string().max(200) })
+      .partial({ parentId: true })
+      .parse({ body: fields.body ?? '', parentId: fields.parentId || undefined })
+    if (!body && !uploads.length)
+      throw new DomainError('Escreva uma atualização ou anexe um arquivo.')
     if (
       parentId &&
       !(
@@ -434,18 +459,29 @@ export async function buildApp(
       ).rows.length
     )
       throw new DomainError('O comentário respondido não pertence a esta tarefa.')
-    const result = await db.query(
-      'INSERT INTO comments (id,task_id,author_id,body,created_at,parent_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [
-        id(),
-        request.params.id,
-        request.viewer.personId,
-        body,
-        new Date().toISOString(),
-        parentId || null,
-      ],
-    )
-    return reply.status(201).send(camelRow(result.rows[0]))
+    const comment = await db.transaction(async (tx) => {
+      const now = new Date().toISOString()
+      const result = await tx.query(
+        'INSERT INTO comments (id,task_id,author_id,body,created_at,parent_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+        [id(), request.params.id, request.viewer.personId, body, now, parentId || null],
+      )
+      for (const file of uploads)
+        await tx.query(
+          'INSERT INTO task_files (id,task_id,column_id,name,size,content,created_at,comment_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+          [
+            randomUUID(),
+            request.params.id,
+            UPDATE_FILES_COLUMN,
+            file.name,
+            file.content.length,
+            file.content,
+            now,
+            result.rows[0].id,
+          ],
+        )
+      return camelRow(result.rows[0])
+    })
+    return reply.status(201).send(comment)
   })
   app.put<{ Params: { id: string } }>('/api/comments/:id/like', async (request) => {
     const me = request.viewer.personId

@@ -149,6 +149,10 @@ export interface FileAttachment {
 }
 export const MAX_FILE_SIZE = 5 * 1024 * 1024
 export const MAX_CELL_FILES = 20
+/** Files attached to one update (comment or reply). */
+export const MAX_COMMENT_FILES = 10
+/** Column id of files attached to updates written here (monday's use `monday-update-files`). */
+export const UPDATE_FILES_COLUMN = 'update-files'
 export interface Board {
   id: string
   name: string

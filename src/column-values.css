@@ -505,7 +505,8 @@
   gap: 8px;
   margin-top: 10px;
 }
-.comment-attachments > a {
+.comment-attachments > a,
+.comment-attachments > button {
   display: grid;
   gap: 7px;
   max-width: 230px;
