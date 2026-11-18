@@ -88,6 +88,7 @@ import {
   type MoveGroup,
 } from './GroupSorting'
 import { GroupName } from './GroupName'
+import { useDragScroll } from './useDragScroll'
 import { ColumnResizeHandle, useColumnWidths } from './ColumnResizing'
 import { TaskCustomCell } from './TaskCustomCell'
 import { AssigneePicker, AssigneeAvatars } from './AssigneePicker'
@@ -163,6 +164,7 @@ function BoardViewContent({
   // Boards the person may see but not change render read-only (the server enforces it too).
   const readOnly = board.access?.canEdit === false
   const [sharing, setSharing] = useState(false)
+  const kanbanDrag = useDragScroll<HTMLDivElement>()
   const viewKey = `${board.id}:${tab}`
   const [rowWindow, setRowWindow] = useState({ key: viewKey, limit: INITIAL_ROWS })
   const rowLimit = rowWindow.key === viewKey ? rowWindow.limit : INITIAL_ROWS
@@ -1466,7 +1468,7 @@ function BoardViewContent({
         </div>
       )}
       {tab === 'kanban' && (
-        <div className="kanban-view">
+        <div className="kanban-view" ref={kanbanDrag.ref} onMouseDown={kanbanDrag.onMouseDown}>
           {statusOptions.map((opt) => {
             const status = opt.label
             const colTasks = tasks.filter((t) => t.status === status)
