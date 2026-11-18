@@ -89,6 +89,7 @@ import {
 } from './GroupSorting'
 import { GroupName } from './GroupName'
 import { useDragScroll } from './useDragScroll'
+import { GroupScroller } from './GroupScroller'
 import { ColumnResizeHandle, useColumnWidths } from './ColumnResizing'
 import { TaskCustomCell } from './TaskCustomCell'
 import { AssigneePicker, AssigneeAvatars } from './AssigneePicker'
@@ -1248,7 +1249,7 @@ function BoardViewContent({
                           disabled={sort !== 'manual' || groupBy !== 'group'}
                         >
                           {(orderedTasks) => (
-                            <div className="group-table-wrap">
+                            <GroupScroller>
                               <table
                                 className={`task-table ${compactTable ? '' : 'resizable-table'}`}
                                 style={
@@ -1455,7 +1456,7 @@ function BoardViewContent({
                               {groupTasks.length === 0 && groupBy === 'status' && (
                                 <p className="empty-group">Nenhuma tarefa com este status.</p>
                               )}
-                            </div>
+                            </GroupScroller>
                           )}
                         </TaskSorting>
                       )}

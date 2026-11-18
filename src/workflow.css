@@ -3865,3 +3865,85 @@ tr:hover .task-comments,
     display: none;
   }
 }
+
+/* Board table: the selection and task columns stay put while the other columns scroll sideways
+   (as in monday). Rows paint their own background so the fixed cells can take it on. */
+.task-table > tbody > tr {
+  background-color: #fff;
+}
+.task-table > thead > tr > th.check-cell,
+.task-table > tbody > tr > td.check-cell,
+.task-table > tfoot > tr > td.check-cell,
+.task-table > thead > tr > th.title-cell,
+.task-table > tbody > tr > td.title-cell,
+.task-table > tfoot > tr > td.title-cell {
+  position: sticky;
+  z-index: 3;
+  /* With collapsed borders the table draws the lines; fixed cells draw their own. */
+  box-shadow:
+    inset 0 -1px #e8ebf2,
+    inset -1px 0 #e8ebf2;
+}
+.task-table > tbody > tr > td.check-cell,
+.task-table > tbody > tr > td.title-cell:not([colspan]) {
+  background-color: inherit;
+}
+.task-table > thead > tr > th.check-cell,
+.task-table > tbody > tr > td.check-cell,
+.task-table > tfoot > tr > td.check-cell {
+  left: 0;
+}
+.task-table > thead > tr > th.title-cell,
+.task-table > tbody > tr > td.title-cell,
+.task-table > tfoot > tr > td.title-cell {
+  left: 36px;
+}
+/* A collapsed group's first cell spans the selection and task columns. */
+.task-table > * > tr > .title-cell[colspan] {
+  left: 0;
+}
+.group-table-wrap.is-scrolled-x .task-table > * > tr > .title-cell {
+  box-shadow:
+    inset 0 -1px #e8ebf2,
+    inset -1px 0 #e8ebf2,
+    6px 0 8px -4px rgb(30 40 70 / 0.12);
+}
+/* "Adicionar item…" stays at the left edge too. */
+.task-table .monday-create-row > td > .monday-add-row {
+  position: sticky;
+  left: 0;
+  width: min(100%, var(--group-visible-width, 100%));
+  max-width: 640px;
+}
+/* The group's own scrollbar replaces the browser's one at the end of the group. */
+.group-table-wrap.has-group-scrollbar {
+  scrollbar-width: none;
+}
+.group-table-wrap.has-group-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.group-scrollbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  height: 14px;
+  margin-top: -1px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: color-mix(in srgb, var(--ui-surface, #fff) 85%, transparent);
+  scrollbar-width: thin;
+  scrollbar-color: #b8c2d6 transparent;
+}
+.group-scrollbar > div {
+  height: 1px;
+}
+.group-scrollbar::-webkit-scrollbar {
+  height: 10px;
+}
+.group-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background: #b8c2d6;
+}
+.group-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #8f9bb3;
+}

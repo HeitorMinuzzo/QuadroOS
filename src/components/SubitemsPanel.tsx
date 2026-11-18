@@ -522,7 +522,7 @@ export function SubitemsPanel({
                       order={columnOrder}
                       visibleKeys={visibleColumns.map((column) => column.key)}
                     >
-                      {resizeHandle(c.key, c.label)}
+                      {resizeHandle(c.key, `${c.label} dos subitens`)}
                     </ColumnHeading>
                   ))}
                   <th scope="col" className="subitem-add-column" inert={readOnly}>

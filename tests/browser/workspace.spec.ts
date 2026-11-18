@@ -1346,7 +1346,7 @@ test('multiple assignees and clickable deadline calendars work in tables, subite
   await expect(calendar).toHaveCount(0)
   await expect(
     page.getByRole('button', { name: 'Prazo: Entrega compartilhada', exact: true }),
-  ).toContainText('20 de mai')
+  ).toContainText('20 mai 2030') // other years show the year
   await page.reload()
   await expect(owner).toContainText('2 pessoas')
   await page
