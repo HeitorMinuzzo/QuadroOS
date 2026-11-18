@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import type { Comment, FileAttachment, Task, Workspace } from '../../shared/domain'
-import { initials, MAX_COMMENT_FILES, MAX_FILE_SIZE } from '../../shared/domain'
+import { initials, MAX_COMMENT_FILES, MAX_FILE_SIZE, MONDAY_ITEM_FILES } from '../../shared/domain'
 import { api, json } from '../api'
 import { Avatar } from './ui'
 import { justCreated } from '../lib/motion'
@@ -553,7 +553,13 @@ export function TaskFiles({ task, data }: { task: Task; data: Workspace }) {
       const column = board?.columns.find((entry) => entry.id === file.columnId)
       section = {
         key,
-        title: file.commentId ? 'Nas atualizações' : column ? column.name : 'Outros arquivos',
+        title: file.commentId
+          ? 'Nas atualizações'
+          : column
+            ? column.name
+            : file.columnId === MONDAY_ITEM_FILES
+              ? 'Arquivos do item'
+              : 'Outros arquivos',
         files: [],
       }
       sections.push(section)

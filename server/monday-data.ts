@@ -55,6 +55,7 @@ export const MONDAY_ITEM_FIELDS = `id name state created_at updated_at creator_i
     ... on WorldClockValue { timezone }
   }
   updates_page(limit:100) { cursor updates { ${UPDATE_FIELDS} } }
+  assets { ${ASSET_FIELDS} }
 `
 interface SourceAsset {
   id: string
@@ -86,6 +87,8 @@ export interface RichMondayItem extends MondayItem {
   url?: string
   description?: { blocks?: Record<string, unknown>[] } | null
   updates_page?: { cursor: string | null; updates: SourceUpdate[] }
+  /** Every file of the item, including the ones uploaded straight to its Files tab (gallery). */
+  assets?: SourceAsset[]
 }
 export interface RichMondayBoard {
   id?: string
@@ -470,6 +473,13 @@ export async function enrichMondayPreview(
         for (const asset of entry.assets || []) addAsset(asset, item.id, null, entry.id)
       }
     }
+    // Files uploaded straight to the item's Files tab live in no column and no update; they
+    // only show up in the item's own asset list, after the ones already found above.
+    const found = new Set(
+      assets.filter((file) => file.itemExternalId === item.id).map((file) => file.externalId),
+    )
+    for (const asset of item.assets || [])
+      if (!found.has(String(asset.id))) addAsset(asset, item.id, null, null)
   }
   const automations: Record<string, unknown>[] = []
   try {

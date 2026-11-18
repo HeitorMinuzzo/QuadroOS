@@ -153,6 +153,8 @@ export const MAX_CELL_FILES = 20
 export const MAX_COMMENT_FILES = 10
 /** Column id of files attached to updates written here (monday's use `monday-update-files`). */
 export const UPDATE_FILES_COLUMN = 'update-files'
+/** Column id of files from a monday item's Files tab that belong to no column or update. */
+export const MONDAY_ITEM_FILES = 'monday-item-files'
 export interface Board {
   id: string
   name: string

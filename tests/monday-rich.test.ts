@@ -6,7 +6,13 @@ import { buildApp } from '../server/app.ts'
 import { previewMonday, prepareMondayPreview } from '../server/monday.ts'
 import { workspace } from '../server/repository.ts'
 import { guessImportMapping } from '../shared/imports.ts'
-import { isTaskDone, isOverdue, type ImportPreview, type Workspace } from '../shared/domain.ts'
+import {
+  isTaskDone,
+  isOverdue,
+  MONDAY_ITEM_FILES,
+  type ImportPreview,
+  type Workspace,
+} from '../shared/domain.ts'
 import { createMondaySessions } from '../server/monday-sessions.ts'
 import { publicSourceData } from '../server/monday-data.ts'
 import { MONDAY_CAPABILITIES, mondayCapability } from '../shared/monday-capabilities.ts'
@@ -44,8 +50,9 @@ test('complete monday preview covers nested items, comments/replies and every st
     tasks: 2,
     subitems: 2,
     comments: 3,
-    files: 3,
-    bytes: pngBytes.length * 2,
+    // The subitem's Files tab adds one; the item's own list repeats files already counted.
+    files: 4,
+    bytes: pngBytes.length * 3,
   })
   assert.equal(preview.items?.find((item) => item.externalId === '202')?.parentExternalId, '201')
   assert.equal(
@@ -100,7 +107,7 @@ test('session-backed import preserves source labels, time, hierarchy, same-name 
   imported = applying.json()
   assert.equal(applying.json().imported, 4)
   assert.equal(applying.json().commentsImported, 3)
-  assert.equal(applying.json().filesImported, 3)
+  assert.equal(applying.json().filesImported, 4)
   assert.equal(applying.json().automationsImported, 1)
   const state = await workspace(db),
     board = state.boards.find((board) => board.id === imported.boardId)!,
@@ -151,6 +158,14 @@ test('session-backed import preserves source labels, time, hierarchy, same-name 
   assert.deepEqual(downloaded.rawPayload, pngBytes)
   const image = await app.inject(`/api/files/${attachment.id}/preview`)
   assert.equal(image.headers['content-type'], 'image/png')
+  // A file only in the subitem's Files tab (no column, no update) arrives with the subitem.
+  const subitem = state.tasks.find((task) => task.externalId === '201')!
+  const gallery = state.attachments!.filter((file) => file.taskId === subitem.id)
+  assert.deepEqual(
+    gallery.map((file) => [file.name, file.columnId, file.commentId ?? null]),
+    [['procedimento-desligamento.png', MONDAY_ITEM_FILES, null]],
+  )
+  assert.deepEqual((await app.inject(`/api/files/${gallery[0].id}`)).rawPayload, pngBytes)
   const external = state.attachments!.find((file) => file.externalUrl)!
   const redirected = await app.inject(`/api/files/${external.id}`)
   assert.equal(redirected.headers.location, 'https://example.com/documento')
@@ -525,7 +540,8 @@ test('asset staging blocks foreign/private redirects, never forwards a token and
     const bundle = await prepareMondayPreview('synthetic-token', '900', richMondayFetch)
     const client = await sessions.stage(bundle)
     const session = await sessions.lease(client.sessionId!)
-    assert.equal(calls, 2)
+    // Column/update file and the subitem's Files-tab file: each download attempted, all blocked.
+    assert.equal(calls, 3)
     assert.equal(session.files.size, 0)
     assert.ok(
       client.coverage?.some((entry) => entry.sourceType === 'file' && entry.mode === 'unavailable'),

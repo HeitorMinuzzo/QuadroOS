@@ -25,6 +25,7 @@ import type {
   ImportSourceAsset,
   ImportSourceColumn,
 } from '../shared/domain.ts'
+import { MONDAY_ITEM_FILES } from '../shared/domain.ts'
 
 export interface MondayImportOptions {
   boardId?: string
@@ -676,7 +677,9 @@ export async function applyMondayImport(
       )
       const columnId = sourceColumn
         ? prepared.customColumns[sourceColumn.header]
-        : `monday-update-files`
+        : asset.updateExternalId
+          ? 'monday-update-files'
+          : MONDAY_ITEM_FILES
       if (sourceColumn && !columnId) continue
       const duplicate = (
         await tx.query(

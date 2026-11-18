@@ -10,6 +10,14 @@ const asset = {
   created_at: '2025-01-01T10:00:00Z',
   public_url: 'https://files.monday.com/asset-700.png',
 }
+// A file uploaded straight to a subitem's Files tab: in no column and no update.
+export const galleryAsset = {
+  id: '780',
+  name: 'procedimento-desligamento.png',
+  file_size: pngBytes.length,
+  created_at: '2025-01-02T09:00:00Z',
+  public_url: 'https://files.monday.com/asset-780.png',
+}
 const author = { id: '7', name: 'Pessoa da origem', email: 'pessoa@example.test' }
 const status = {
   id: 'status',
@@ -196,6 +204,8 @@ export function richMondayFixture() {
       },
     ],
     updates_page: { cursor: index ? null : 'next-comments', updates: index ? [] : [update] },
+    // monday lists every file of the item here, the ones above included.
+    assets: index ? [] : [asset],
   }))
   const childColumns = [
     { id: 'name', title: 'Name', type: 'name' },
@@ -236,6 +246,7 @@ export function richMondayFixture() {
       { id: 'child_check', type: 'checkbox', text: '', value: '{"checked":"false"}' },
     ],
     updates_page: { cursor: null, updates: [] },
+    assets: index ? [] : [galleryAsset],
   }))
   const board = {
     id: '900',
