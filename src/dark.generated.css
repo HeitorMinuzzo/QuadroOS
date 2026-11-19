@@ -1724,6 +1724,7 @@
     background: transparent
 }
 :where(:root[data-theme='dark']) .task-name-surface .editable[readonly] {
+    caret-color: transparent;
     border-color: transparent;
     background: transparent
 }

@@ -1187,6 +1187,7 @@ body.resizing-columns * {
 .task-name-surface .editable[readonly] {
   user-select: none;
   cursor: inherit;
+  caret-color: transparent;
   border-color: transparent;
   background: transparent;
 }
