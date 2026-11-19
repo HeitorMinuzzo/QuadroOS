@@ -70,7 +70,12 @@ type Page = 'board' | 'workspace' | 'mine'
 function readRoute() {
   const [, page, boardId = '', view = 'table'] = location.hash.split('/')
   return {
-    page: (page === 'workspace' || page === 'mine' ? page : 'board') as Page,
+    // Opening the site without a route (or with an unknown one) starts on Início.
+    page: (page === 'workspace' || page === 'mine'
+      ? page
+      : page === 'board' && boardId
+        ? 'board'
+        : 'workspace') as Page,
     boardId: decodeURIComponent(boardId),
     tab: (['table', 'kanban', 'calendar', 'overview', 'automations'].includes(view)
       ? view
@@ -152,6 +157,24 @@ export function App() {
     window.addEventListener('hashchange', handler)
     return () => window.removeEventListener('hashchange', handler)
   }, [])
+  // A link to a board that no longer exists (or that this person cannot open) goes to Início
+  // instead of silently showing some other board.
+  // The board may also be new (made in another tab): the data is fetched again once first.
+  const rechecked = useRef('')
+  const [rechecks, setRechecks] = useState(0)
+  useEffect(() => {
+    if (loading || loadError || route.page !== 'board') return
+    if (data.boards.some((b) => b.id === route.boardId)) return
+    if (rechecked.current !== route.boardId) {
+      rechecked.current = route.boardId
+      void refresh()
+        .catch(() => undefined)
+        .finally(() => setRechecks((n) => n + 1))
+      return
+    }
+    setRoute({ page: 'workspace', boardId: '', tab: 'table' })
+    history.replaceState(null, '', '#/workspace')
+  }, [loading, loadError, route.page, route.boardId, data.boards, refresh, rechecks])
   useEffect(() => {
     if (!toast) return
     const timer = setTimeout(() => setToast(null), toast.error ? 7000 : 3500)

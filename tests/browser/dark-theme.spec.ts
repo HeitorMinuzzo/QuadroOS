@@ -45,7 +45,7 @@ test('dark theme keeps readable contrast on the board, overview, details and dia
   page,
 }) => {
   await page.addInitScript(() => localStorage.setItem('quadroos:theme', 'dark'))
-  await page.goto('/')
+  await page.goto('/#/board/board-ti/table')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   expect(await contrastViolations(page)).toEqual([])

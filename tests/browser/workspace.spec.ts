@@ -53,7 +53,7 @@ async function accessibilityFindings(page: Page, scan: Awaited<ReturnType<AxeBui
 test('desktop: edit, create, persist, comment and change views', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto('/')
+  await page.goto('/#/board/board-ti/table')
   await expect(page.getByRole('heading', { name: 'Assuntos de TI', exact: true })).toBeVisible()
   await page.screenshot({ path: 'test-results/desktop.png', fullPage: true })
   await page.screenshot({ path: 'test-results/preview.png' })
@@ -374,7 +374,7 @@ test('CSV import maps columns, keeps extra data and reports duplicate rows', asy
 test('workspace navigation, quick creation and custom labels remain usable after redesign', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('/#/board/board-ti/table')
   await page.getByRole('textbox', { name: 'Buscar quadros', exact: true }).fill('Produto')
   await expect(
     page.getByRole('navigation', { name: 'Quadros', exact: true }).getByRole('button'),
