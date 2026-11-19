@@ -203,6 +203,15 @@ export function EditableText({
           : undefined
       }
       maxLength={300}
+      // Browsers treat any focused text field as keyboard focus, so a single click on the
+      // read-only title would draw the editing ring. Mark pointer focus to keep it quiet.
+      onPointerDown={(e) => {
+        if (activation === 'doubleClick') e.currentTarget.dataset.pointerFocus = ''
+      }}
+      onBlur={(e) => {
+        delete e.currentTarget.dataset.pointerFocus
+        save()
+      }}
       onDoubleClick={begin}
       onKeyDown={(e) => {
         if (readOnly) return

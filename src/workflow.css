@@ -1190,7 +1190,8 @@ body.resizing-columns * {
   border-color: transparent;
   background: transparent;
 }
-.task-name-surface .editable[readonly]:focus:not(:focus-visible) {
+.task-name-surface .editable[readonly]:focus:not(:focus-visible),
+.task-name-surface .editable[readonly][data-pointer-focus]:focus {
   outline: none;
   box-shadow: none;
 }

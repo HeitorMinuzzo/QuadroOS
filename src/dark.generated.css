@@ -1727,7 +1727,7 @@
     border-color: transparent;
     background: transparent
 }
-:where(:root[data-theme='dark']) .task-name-surface .editable[readonly]:focus:not(:focus-visible) {
+:where(:root[data-theme='dark']) .task-name-surface .editable[readonly]:focus:not(:focus-visible), :where(:root[data-theme='dark']) .task-name-surface .editable[readonly][data-pointer-focus]:focus {
     outline: none;
     box-shadow: none
 }
