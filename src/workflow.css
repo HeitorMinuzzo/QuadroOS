@@ -2435,9 +2435,10 @@ tr:hover .task-comments,
   padding: 0;
 }
 .subitems-panel {
+  --subitems-gutter: 52px;
   position: relative;
   min-width: 0;
-  padding: 14px 0 20px 52px;
+  padding: 14px 0 20px var(--subitems-gutter);
   border: 0;
   background: white;
 }
@@ -3533,7 +3534,8 @@ tr:hover .task-comments,
     font-size: 9px;
   }
   .subitems-panel {
-    padding: 14px 0 16px 24px;
+    --subitems-gutter: 24px;
+    padding: 14px 0 16px var(--subitems-gutter);
   }
   .subitems-connectors {
     left: 5px;
@@ -3945,4 +3947,91 @@ tr:hover .task-comments,
 }
 .group-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #8f9bb3;
+}
+
+/* Subitems of a board task scroll with the group, but their selection and name columns stay put
+   like the task column: the subitem table stops scrolling on its own, so its fixed cells hold
+   on to the group's scroll. The colored edge moves onto the fixed selection cells. */
+:where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll {
+  overflow: visible;
+  border-left-width: 0;
+  border-radius: 0;
+}
+:where(
+    .group-table-wrap
+      > .task-table
+      > tbody
+      > tr.subitems-row
+      > td
+      > .subitems-panel
+      > .subitems-scroll
+      > .subitems-table
+      > tbody
+  )
+  > tr {
+  background-color: #fff;
+}
+:where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > *
+  > tr
+  > .subitem-check-cell,
+:where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > *
+  > tr
+  > .subitem-name-cell {
+  position: sticky;
+  z-index: 2;
+  background-color: inherit;
+}
+:where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > *
+  > tr
+  > .subitem-check-cell {
+  left: var(--subitems-gutter);
+  box-shadow:
+    inset 4px 0 var(--subitem-color),
+    inset 0 -1px #d6dfed;
+}
+:where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > *
+  > tr
+  > .subitem-name-cell {
+  left: calc(var(--subitems-gutter) + 32px);
+  box-shadow:
+    inset -1px 0 #d6dfed,
+    inset 0 -1px #d6dfed;
+}
+:where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > thead
+  > tr
+  > :is(.subitem-check-cell, .subitem-name-cell) {
+  background-color: #fff;
+}
+/* "Adicionar subitem…" stays under the names. */
+:where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  .subitems-table
+  > tfoot
+  .subitem-add-cell
+  > * {
+  position: sticky;
+  left: calc(var(--subitems-gutter) + 44px);
+  max-width: 520px;
+}
+/* The tree lines on the left belong to the unscrolled position; they step aside meanwhile. */
+.subitems-connectors {
+  transition: opacity 120ms;
+}
+.group-table-wrap.is-scrolled-x .subitems-row .subitems-connectors {
+  opacity: 0;
 }

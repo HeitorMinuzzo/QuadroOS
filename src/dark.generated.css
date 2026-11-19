@@ -2197,6 +2197,7 @@
     background: #1e2329
 }
 :where(:root[data-theme='dark']) .subitems-panel {
+    --subitems-gutter: 52px;
     border: 0;
     background: #171920
 }
@@ -2539,6 +2540,9 @@
     :where(:root[data-theme='dark']) .group-table-wrap {
         border-left-width: 4px
     }
+    :where(:root[data-theme='dark']) .subitems-panel {
+        --subitems-gutter: 24px
+    }
     :where(:root[data-theme='dark']) .drawer-modal {
         border-radius: 0
     }
@@ -2654,6 +2658,64 @@
 }
 :where(:root[data-theme='dark']) .group-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #8f9bb3
+}
+:where(:root[data-theme='dark']) :where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll {
+    border-left-width: 0;
+    border-radius: 0
+}
+:where(:root[data-theme='dark']) :where(
+    .group-table-wrap
+      > .task-table
+      > tbody
+      > tr.subitems-row
+      > td
+      > .subitems-panel
+      > .subitems-scroll
+      > .subitems-table
+      > tbody
+  )
+  > tr {
+    background-color: #171920
+}
+:where(:root[data-theme='dark']) :where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > *
+  > tr
+  > .subitem-check-cell, :where(:root[data-theme='dark']) :where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > *
+  > tr
+  > .subitem-name-cell {
+    background-color: inherit
+}
+:where(:root[data-theme='dark']) :where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > *
+  > tr
+  > .subitem-check-cell {
+    box-shadow: inset 4px 0 var(--subitem-color),
+    inset 0 -1px #2b3038
+}
+:where(:root[data-theme='dark']) :where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > *
+  > tr
+  > .subitem-name-cell {
+    box-shadow: inset -1px 0 #2b3038,
+    inset 0 -1px #2b3038
+}
+:where(:root[data-theme='dark']) :where(.group-table-wrap > .task-table > tbody > tr.subitems-row > td > .subitems-panel)
+  > .subitems-scroll
+  > .subitems-table
+  > thead
+  > tr
+  > :is(.subitem-check-cell, :where(:root[data-theme='dark']) .subitem-name-cell) {
+    background-color: #171920
 }
 /*  from controls.css  */
 :where(:root[data-theme='dark']) .field-select-trigger {
