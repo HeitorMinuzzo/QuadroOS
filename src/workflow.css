@@ -2904,6 +2904,11 @@ tr:hover .task-comments,
   border-radius: 12px;
   box-shadow: 0 22px 80px #1d294435;
 }
+/* Opening a menu inside a dialog locks page scroll and hides the scrollbar, which widens the
+   viewport; keep dialogs laid out in the width they had so they don't jump sideways. */
+body[data-scroll-locked] dialog.modal {
+  right: var(--removed-body-scroll-bar-size, 0px);
+}
 .modal::backdrop {
   background: #19243e52;
   backdrop-filter: blur(3px);
